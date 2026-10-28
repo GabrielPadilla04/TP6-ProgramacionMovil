@@ -18,6 +18,7 @@ namespace TP5_Servicios_API_REST.Data
         public DbSet<SalidaDetalle> SalidaDetalles { get; set; }
         public DbSet<Transaccion> Transacciones { get; set; }
         public DbSet<Imagen> Imagenes { get; set; }
+        public DbSet<LogAuditoria> LogsAuditoria { get; set; } // <-- Añadido para el middleware de auditoría
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

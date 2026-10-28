@@ -5,10 +5,11 @@ using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using TP5_Servicios_API_REST.Data;
 using TP5_Servicios_API_REST.Services;
+using TP5_Servicios_API_REST.Middlewares; // <-- 1. Importar tu namespace de middlewares
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Base de datos (MySQL con versión fija para evitar crasheos de arranque en MonsterASP)
+// 1. Base de datos (MySQL con versión fija)
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(connectionString, new MySqlServerVersion(new Version(8, 0, 30))));
@@ -16,7 +17,6 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // 2. Autenticación JWT
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var key = Encoding.UTF8.GetBytes(jwtSettings["Key"] ?? "ClaveSecretaSuperSeguraTP5_2026!ConSuficienteLongitud12345");
-
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -49,7 +49,8 @@ builder.Services.AddCors(options =>
     });
 });
 
-// 4. Inyección de Dependencias
+// 4. Inyección de Dependencias (Servicios)
+
 builder.Services.AddScoped<CategoriaService>();
 builder.Services.AddScoped<ClienteService>();
 builder.Services.AddScoped<ProductoService>();
@@ -63,7 +64,10 @@ builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
-// 6. Pipeline HTTP (Modificado para funcionar en producción de MonsterASP)
+// 6. Pipeline HTTP
+// <-- 3. Añadido: Middleware global de excepciones y auditoría al inicio
+app.UseMiddleware<AuditoriaMiddleware>();
+
 app.MapOpenApi();
 app.MapScalarApiReference();
 
@@ -73,6 +77,7 @@ app.MapGet("/", () => Results.Redirect("/scalar/v1"));
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseCors("Permisivo");
+
 app.UseAuthentication();
 app.UseAuthorization();
 

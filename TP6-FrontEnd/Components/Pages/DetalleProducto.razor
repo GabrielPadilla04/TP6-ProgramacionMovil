@@ -1,0 +1,128 @@
+﻿@page "/producto/{Id:int}"
+@using TP6_Shared.DTOs.Producto.Response
+@using TP6_FrontEnd.Services
+@inject IProductoService ProductoService
+@inject ICarritoService CarritoService
+@inject NavigationManager NavManager
+
+<div class="container mt-4 mb-5">
+    <!-- Botón para volver -->
+    <button class="btn btn-outline-secondary mb-4" @onclick="VolverAlCatalogo">
+        ← Volver al Catálogo
+    </button>
+
+    @if (cargando)
+    {
+        <div class="d-flex justify-content-center mt-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando detalle...</span>
+            </div>
+        </div>
+    }
+    else if (producto == null)
+    {
+        <div class="alert alert-danger" role="alert">
+            No se pudo cargar la información del producto o no existe.
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            <!-- Columna de la Imagen -->
+            <div class="col-12 col-md-6 mb-4">
+                <div class="bg-light d-flex align-items-center justify-content-center rounded shadow-sm" style="height: 400px;">
+                    <span class="text-secondary fs-4">📷 Imagen no disponible</span>
+                </div>
+            </div>
+
+            <!-- Columna de la Información -->
+            <div class="col-12 col-md-6">
+                <h2 class="fw-bold">@producto.Nombre</h2>
+                <h3 class="text-success my-3">$@producto.Precio</h3>
+
+                <div class="mb-4">
+                    @if (producto.Stock > 0)
+                    {
+                        <span class="badge bg-success fs-6">Stock disponible: @producto.Stock</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-danger fs-6">Sin stock</span>
+                    }
+                </div>
+
+                <p class="text-muted">
+                    Descripción del producto no especificada en el catálogo base.
+                </p>
+
+                <hr class="my-4" />
+
+                <!-- Control de cantidad y botón de carrito -->
+                <div class="d-flex gap-3 align-items-center">
+                    <input type="number"
+                           class="form-control"
+                           style="width: 100px;"
+                           @bind="cantidad"
+                           min="1"
+                           max="@producto.Stock"
+                           disabled="@(producto.Stock == 0)" />
+
+                    <button class="btn btn-primary flex-grow-1"
+                            disabled="@(producto.Stock == 0)"
+                            @onclick="AgregarAlCarrito">
+                        🛒 Agregar al carrito
+                    </button>
+                </div>
+
+                <!-- Mensaje de éxito dinámico -->
+                @if (mensajeExito)
+                {
+                    <div class="alert alert-success mt-3 p-2 text-center" role="alert">
+                        ¡Producto agregado al carrito con éxito!
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private ProductoResponse? producto;
+    private bool cargando = true;
+    private int cantidad = 1;
+    private bool mensajeExito = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        cargando = true;
+        producto = await ProductoService.ObtenerPorIdAsync(Id);
+        cargando = false;
+    }
+
+    private void VolverAlCatalogo()
+    {
+        NavManager.NavigateTo("/catalogo");
+    }
+
+    private async Task AgregarAlCarrito()
+    {
+        if (producto != null)
+        {
+            // Llama al servicio Singleton que guarda en memoria
+            CarritoService.AgregarItem(producto, cantidad);
+
+            // Muestra el mensaje de éxito
+            mensajeExito = true;
+
+            // Espera 2 segundos de forma asíncrona
+            await Task.Delay(2000);
+
+            // Oculta el mensaje y redibuja la pantalla
+            mensajeExito = false;
+            StateHasChanged();
+        }
+    }
+}

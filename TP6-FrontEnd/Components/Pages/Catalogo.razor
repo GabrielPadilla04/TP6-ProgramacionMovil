@@ -1,0 +1,145 @@
+﻿@page "/"
+@page "/catalogo"
+@using TP6_Shared.DTOs.Producto.Response
+@using TP6_FrontEnd.Services
+@inject IProductoService ProductoService
+
+<div class="container mt-4">
+    <!-- Buscador y Filtros -->
+    <div class="row align-items-center mb-4 g-3">
+        <div class="col-12 col-md-4">
+            <h2 class="mb-0">Catálogo</h2>
+        </div>
+        <div class="col-12 col-md-5">
+            <input type="text"
+                   class="form-control"
+                   placeholder="Buscar por nombre..."
+                   @bind="textoBusqueda"
+                   @bind:event="oninput"
+                   @onkeyup="AplicarFiltros" />
+        </div>
+        <div class="col-12 col-md-3">
+            <select class="form-select" @bind="categoriaSeleccionada" @bind:after="AplicarFiltros">
+                <option value="">Todas las categorías</option>
+                <option value="Electrónica">Electrónica</option>
+                <option value="Ropa">Ropa</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Estados de carga, error y validación -->
+    @if (cargando)
+    {
+        <div class="d-flex justify-content-center align-items-center my-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <span class="ms-3 text-muted">Cargando productos...</span>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(mensajeError))
+    {
+        <div class="alert alert-danger shadow-sm" role="alert">
+            <h5 class="alert-heading">Error al conectar con el servidor</h5>
+            <p class="mb-2">@mensajeError</p>
+            <button class="btn btn-outline-danger btn-sm" @onclick="CargarProductos">Reintentar</button>
+        </div>
+    }
+    else if (productosMostrados == null || !productosMostrados.Any())
+    {
+        <div class="alert alert-warning" role="alert">
+            No se encontraron productos que coincidan con la búsqueda.
+        </div>
+    }
+    else
+    {
+        <!-- Grilla de productos -->
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            @foreach (var producto in productosMostrados)
+            {
+                <div class="col">
+                    <div class="card h-100 shadow-sm border-0">
+                        <div class="bg-light text-center py-5 rounded-top">
+                            <span class="text-secondary">📷 Imagen no disponible</span>
+                        </div>
+
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title text-truncate">@producto.Nombre</h5>
+                            <h4 class="text-success mb-2">$@producto.Precio</h4>
+
+                            <div class="mb-3">
+                                @if (producto.Stock > 0)
+                                {
+                                    <span class="badge bg-success">Stock: @producto.Stock</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger">Sin stock</span>
+                                }
+                            </div>
+
+                            <a href="/producto/@producto.Id" class="btn btn-primary mt-auto w-100">
+                                Ver detalle
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private List<ProductoListadoResponse>? productosOriginales;
+    private List<ProductoListadoResponse> productosMostrados = new();
+
+    private string textoBusqueda = "";
+    private string categoriaSeleccionada = "";
+    private bool cargando = true;
+    private string? mensajeError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarProductos();
+    }
+
+    private async Task CargarProductos()
+    {
+        cargando = true;
+        mensajeError = null;
+
+        try
+        {
+            var resultado = await ProductoService.ObtenerTodosAsync(1, 50);
+            productosOriginales = resultado ?? new List<ProductoListadoResponse>();
+            AplicarFiltros();
+        }
+        catch (Exception ex)
+        {
+            mensajeError = $"No se pudo obtener la lista de productos: {ex.Message}";
+            productosOriginales = new();
+            productosMostrados = new();
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private void AplicarFiltros()
+    {
+        if (productosOriginales == null) return;
+
+        var query = productosOriginales.AsEnumerable();
+
+        if (!string.IsNullOrWhiteSpace(textoBusqueda))
+        {
+            query = query.Where(p => p.Nombre.Contains(textoBusqueda, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // if (!string.IsNullOrWhiteSpace(categoriaSeleccionada))
+        // {
+        //     query = query.Where(p => p.Categoria == categoriaSeleccionada);
+        // }
+
+        productosMostrados = query.ToList();
+    }
+}

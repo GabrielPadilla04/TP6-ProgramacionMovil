@@ -1,0 +1,350 @@
+﻿@page "/admin/productos"
+@using TP6_Shared.DTOs.Producto.Request
+@using TP6_Shared.DTOs.Producto.Response
+@using TP6_FrontEnd.Services
+@inject IProductoService ProductoService
+@inject IAuthService AuthService
+@inject NavigationManager NavManager
+
+<div class="container mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>Gestión de Productos</h2>
+            <p class="text-muted mb-0">Panel exclusivo de administración</p>
+        </div>
+        <button class="btn btn-primary" @onclick="AbrirModalCrear">
+            <span class="bi bi-plus-lg me-1"></span> Nuevo Producto
+        </button>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(mensajeAlerta))
+    {
+        <div class="alert @claseAlerta alert-dismissible fade show" role="alert">
+            @mensajeAlerta
+            <button type="button" class="btn-close" @onclick="() => mensajeAlerta = null"></button>
+        </div>
+    }
+
+    @if (cargando)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-2 text-muted">Cargando productos...</p>
+        </div>
+    }
+    else if (!productos.Any())
+    {
+        <div class="alert alert-info text-center py-4">
+            No hay productos registrados en el sistema.
+        </div>
+    }
+    else
+    {
+        <div class="card shadow-sm border-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 80px;">Imagen</th>
+                            <th>Nombre</th>
+                            <th>Precio</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var prod in productos)
+                        {
+                            <tr>
+                                <td>
+                                    <img src="@(string.IsNullOrWhiteSpace(prod.ImagenUrl) ? "https://placehold.co/100x100?text=Sin+Foto" : prod.ImagenUrl)"
+                                         alt="@prod.Nombre"
+                                         class="img-thumbnail"
+                                         style="width: 60px; height: 60px; object-fit: cover;" />
+                                </td>
+                                <td>
+                                    <div class="fw-bold">@prod.Nombre</div>
+                                    <small class="text-muted">ID: @prod.Id</small>
+                                </td>
+                                <td>$@prod.Precio</td>
+                                <td class="text-end">
+                                    <button class="btn btn-sm btn-outline-secondary me-2" @onclick="() => AbrirModalEditar(prod.Id)">
+                                        Editar
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmarEliminacion(prod.Id, prod.Nombre)">
+                                        Eliminar
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>
+
+@* Modal para Crear / Editar Producto con subida de imagen *@
+@if (mostrarModal)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@(esEdicion ? "Editar Producto" : "Nuevo Producto")</h5>
+                    <button type="button" class="btn-close" @onclick="CerrarModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nombre</label>
+                        <input type="text" class="form-control" @bind="formNombre" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descripción</label>
+                        <textarea class="form-control" rows="3" @bind="formDescripcion"></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Precio</label>
+                            <input type="number" step="0.01" class="form-control" @bind="formPrecio" />
+                        </div>
+                        @if (!esEdicion)
+                        {
+                            <div class="col-6 mb-3">
+                                <label class="form-label">Stock inicial</label>
+                                <input type="number" class="form-control" @bind="formStock" />
+                            </div>
+                        }
+                        <div class="col-6 mb-3">
+                            <label class="form-label">ID Categoría</label>
+                            <input type="number" class="form-control" @bind="formCategoriaId" />
+                        </div>
+                    </div>
+
+                    <!-- Selector de Imagen física con vista previa -->
+                    <div class="mb-3">
+                        <label class="form-label">Imagen del Producto</label>
+                        <InputFile OnChange="ManejarSeleccionArchivo" class="form-control" accept=".jpg,.jpeg,.png,.webp" />
+                        <small class="text-muted d-block mt-1">Formatos admitidos: JPG, PNG, WEBP (Máx. 5MB)</small>
+
+                        @if (!string.IsNullOrWhiteSpace(formImagenUrl))
+                        {
+                            <div class="mt-2 text-center">
+                                <img src="@formImagenUrl" alt="Vista previa" class="img-thumbnail" style="max-height: 120px;" />
+                            </div>
+                        }
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CerrarModal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" @onclick="GuardarProducto" disabled="@procesandoGuardado">
+                        @(procesandoGuardado ? "Guardando..." : "Guardar")
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<ProductoListadoResponse> productos = new();
+    private bool cargando = true;
+    private bool procesandoGuardado = false;
+    private string? mensajeAlerta;
+    private string claseAlerta = "alert-success";
+
+    // Control de modal
+    private bool mostrarModal = false;
+    private bool esEdicion = false;
+    private int idProductoEditar = 0;
+
+    // Campos del formulario
+    private string formNombre = string.Empty;
+    private string formDescripcion = string.Empty;
+    private decimal formPrecio = 0;
+    private int formStock = 0;
+    private int formCategoriaId = 1;
+    private string? formImagenUrl;
+
+    // Archivo en memoria para subir
+    private IBrowserFile? archivoSeleccionado;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var rol = await AuthService.ObtenerRolAsync();
+        if (rol != "Administrador")
+        {
+            NavManager.NavigateTo("/catalogo");
+            return;
+        }
+
+        await CargarProductos();
+    }
+
+    private async Task CargarProductos()
+    {
+        cargando = true;
+        productos = await ProductoService.ObtenerTodosAsync(page: 1, pageSize: 50);
+        cargando = false;
+    }
+
+    private void AbrirModalCrear()
+    {
+        esEdicion = false;
+        idProductoEditar = 0;
+        formNombre = string.Empty;
+        formDescripcion = string.Empty;
+        formPrecio = 0;
+        formStock = 1;
+        formCategoriaId = 1;
+        formImagenUrl = null;
+        archivoSeleccionado = null;
+        mostrarModal = true;
+    }
+
+    private async Task AbrirModalEditar(int id)
+    {
+        var prod = await ProductoService.ObtenerPorIdAsync(id);
+        if (prod == null)
+        {
+            MostrarMensaje("No se pudo cargar el producto para edición.", "alert-danger");
+            return;
+        }
+
+        esEdicion = true;
+        idProductoEditar = prod.Id;
+        formNombre = prod.Nombre;
+        formDescripcion = prod.Descripcion;
+        formPrecio = prod.Precio;
+        formCategoriaId = prod.CategoriaId;
+        formImagenUrl = prod.ImagenUrl;
+        archivoSeleccionado = null;
+        mostrarModal = true;
+    }
+
+    private void CerrarModal()
+    {
+        mostrarModal = false;
+    }
+
+    private async Task ManejarSeleccionArchivo(InputFileChangeEventArgs e)
+    {
+        archivoSeleccionado = e.File;
+
+        try
+        {
+            var formato = archivoSeleccionado.ContentType;
+            var buffer = new byte[archivoSeleccionado.Size];
+            await archivoSeleccionado.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024).ReadAsync(buffer);
+            formImagenUrl = $"data:{formato};base64,{Convert.ToBase64String(buffer)}";
+        }
+        catch (Exception ex)
+        {
+            MostrarMensaje($"Error al cargar vista previa: {ex.Message}", "alert-warning");
+        }
+    }
+
+    private async Task GuardarProducto()
+    {
+        if (string.IsNullOrWhiteSpace(formNombre))
+        {
+            MostrarMensaje("El nombre del producto es requerido.", "alert-warning");
+            return;
+        }
+
+        procesandoGuardado = true;
+        int idProductoFinal = 0;
+
+        if (esEdicion)
+        {
+            var req = new ActualizarProductoRequest
+            {
+                Nombre = formNombre,
+                Descripcion = formDescripcion,
+                Precio = formPrecio,
+                CategoriaId = formCategoriaId,
+                ImagenUrl = formImagenUrl
+            };
+
+            var exito = await ProductoService.ActualizarAsync(idProductoEditar, req);
+            if (exito)
+            {
+                idProductoFinal = idProductoEditar;
+            }
+            else
+            {
+                MostrarMensaje("Error al actualizar los datos del producto.", "alert-danger");
+                procesandoGuardado = false;
+                return;
+            }
+        }
+        else
+        {
+            var req = new CrearProductoRequest
+            {
+                Nombre = formNombre,
+                Descripcion = formDescripcion,
+                Precio = formPrecio,
+                Stock = formStock,
+                CategoriaId = formCategoriaId,
+                ImagenUrl = formImagenUrl
+            };
+
+            var nuevoProd = await ProductoService.CrearAsync(req);
+            if (nuevoProd != null)
+            {
+                idProductoFinal = nuevoProd.Id;
+            }
+            else
+            {
+                MostrarMensaje("Error al crear el producto.", "alert-danger");
+                procesandoGuardado = false;
+                return;
+            }
+        }
+
+        // Si se eligió una foto desde el dispositivo, se sube por el endpoint de imagen
+        if (archivoSeleccionado != null && idProductoFinal > 0)
+        {
+            try
+            {
+                using var stream = archivoSeleccionado.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+                var resultadoImagen = await ProductoService.SubirImagenAsync(idProductoFinal, stream, archivoSeleccionado.Name);
+
+                if (resultadoImagen == null)
+                {
+                    MostrarMensaje("Producto guardado, pero ocurrió un problema al subir la imagen.", "alert-warning");
+                }
+            }
+            catch (Exception ex)
+            {
+                MostrarMensaje($"Producto guardado, pero falló la transferencia de imagen: {ex.Message}", "alert-warning");
+            }
+        }
+
+        MostrarMensaje(esEdicion ? "Producto actualizado exitosamente." : "Producto creado exitosamente.", "alert-success");
+        CerrarModal();
+        await CargarProductos();
+
+        procesandoGuardado = false;
+    }
+
+    private async Task ConfirmarEliminacion(int id, string nombre)
+    {
+        var exito = await ProductoService.EliminarAsync(id);
+        if (exito)
+        {
+            MostrarMensaje($"Producto \"{nombre}\" eliminado.", "alert-success");
+            await CargarProductos();
+        }
+        else
+        {
+            MostrarMensaje("No se pudo eliminar el producto.", "alert-danger");
+        }
+    }
+
+    private void MostrarMensaje(string mensaje, string clase)
+    {
+        mensajeAlerta = mensaje;
+        claseAlerta = clase;
+    }
+}

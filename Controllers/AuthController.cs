@@ -2,14 +2,15 @@
 using System.Security.Claims;
 using System.Text;
 using BCrypt.Net;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using TP5_Servicios_API_REST.Data;
-using TP5_Servicios_API_REST.DTOs.Auth;
-using TP5_Servicios_API_REST.Models;
+using TP6_Servicios_API_REST.Data;
+using TP6_Shared.DTOs.Auth;
+using TP6_Servicios_API_REST.Models;
 
-namespace TP5_Servicios_API_REST.Controllers
+namespace TP6_Servicios_API_REST.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
@@ -24,6 +25,7 @@ namespace TP5_Servicios_API_REST.Controllers
             _configuration = configuration;
         }
 
+        // 1. Registro PÚBLICO: Todo aquel que se registre por acá es estrictamente CLIENTE
         [HttpPost("register")]
         public async Task<IActionResult> Register(RegisterDto dto)
         {
@@ -35,14 +37,37 @@ namespace TP5_Servicios_API_REST.Controllers
                 NombreCompleto = dto.NombreCompleto,
                 Email = dto.Email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
-                Rol = Roles.Usuario, // <--- Forzamos la constante segura en lugar de dto.Rol
+                Rol = Roles.Cliente, // Asignación fija y segura para el flujo normal
                 FechaCreacion = DateTime.UtcNow
             };
 
             _context.Usuarios.Add(usuario);
             await _context.SaveChangesAsync();
 
-            return Ok(new { mensaje = "Usuario registrado correctamente." });
+            return Ok(new { mensaje = "Cuenta de cliente creada correctamente." });
+        }
+
+        // 2. Registro PROTEGIDO: Solo un Administrador autenticado puede crear otro Administrador
+        [HttpPost("register-admin")]
+        [Authorize(Roles = Roles.Administrador)]
+        public async Task<IActionResult> RegisterAdmin(RegisterDto dto)
+        {
+            if (await _context.Usuarios.AnyAsync(u => u.Email == dto.Email))
+                return BadRequest(new { mensaje = "El correo electrónico ya está registrado." });
+
+            var nuevoAdmin = new Usuario
+            {
+                NombreCompleto = dto.NombreCompleto,
+                Email = dto.Email,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
+                Rol = Roles.Administrador,
+                FechaCreacion = DateTime.UtcNow
+            };
+
+            _context.Usuarios.Add(nuevoAdmin);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { mensaje = "Administrador registrado correctamente." });
         }
 
         [HttpPost("login")]
@@ -60,23 +85,26 @@ namespace TP5_Servicios_API_REST.Controllers
         {
             var jwtSettings = _configuration.GetSection("Jwt");
 
-            string secretKey = jwtSettings["Key"] ?? "ClaveSecretaSuperSeguraTP5_2026!ConSuficienteLongitud12345";
+            // Lee la clave del entorno/secrets. Si no existe, lanza excepción en lugar de usar un string hardcodeado
+            string secretKey = jwtSettings["Key"]
+                ?? throw new InvalidOperationException("La clave secreta JWT no está configurada en los secretos de la aplicación.");
+
             var key = Encoding.UTF8.GetBytes(secretKey);
 
             var claims = new[]
             {
-                new Claim(ClaimTypes.NameIdentifier, usuario.Id.ToString()),
-                new Claim(JwtRegisteredClaimNames.Sub, usuario.Id.ToString()),
-                new Claim(JwtRegisteredClaimNames.Email, usuario.Email),
-                new Claim(ClaimTypes.Role, usuario.Rol ?? Roles.Usuario) // <--- Usamos la constante como fallback
+            new Claim(ClaimTypes.NameIdentifier, usuario.Id.ToString()),
+            new Claim(JwtRegisteredClaimNames.Sub, usuario.Id.ToString()),
+            new Claim(JwtRegisteredClaimNames.Email, usuario.Email),
+            new Claim(ClaimTypes.Role, usuario.Rol ?? Roles.Cliente)
             };
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(claims),
                 Expires = DateTime.UtcNow.AddHours(8),
-                Issuer = jwtSettings["Issuer"] ?? "TP5Api",
-                Audience = jwtSettings["Audience"] ?? "TP5Clients",
+                Issuer = jwtSettings["Issuer"] ?? "TP6Api",
+                Audience = jwtSettings["Audience"] ?? "TP6Clients",
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
             };
 

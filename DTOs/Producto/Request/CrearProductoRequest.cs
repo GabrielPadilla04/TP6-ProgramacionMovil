@@ -1,4 +1,4 @@
-namespace TP5_Servicios_API_REST.DTOs.Producto.Request
+namespace TP6_Shared.DTOs.Producto.Request
 {
     public class CrearProductoRequest
     {

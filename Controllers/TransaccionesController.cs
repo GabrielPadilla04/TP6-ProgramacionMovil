@@ -3,12 +3,12 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using TP5_Servicios_API_REST.Data;
-using TP5_Servicios_API_REST.DTOs;
-using TP5_Servicios_API_REST.Excepciones;
-using TP5_Servicios_API_REST.Models;
+using TP6_Servicios_API_REST.Data;
+using TP6_Shared.DTOs;
+using TP6_Servicios_API_REST.Excepciones;
+using TP6_Servicios_API_REST.Models;
 
-namespace TP5_Servicios_API_REST.Controllers
+namespace TP6_Servicios_API_REST.Controllers
 {
     [Authorize]
     [ApiController]

@@ -1,4 +1,4 @@
-namespace TP5_Servicios_API_REST.DTOs.Categoria.Response
+namespace TP6_Shared.DTOs.Categoria.Response
 {
     public class CategoriaResponse
     {

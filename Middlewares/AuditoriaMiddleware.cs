@@ -1,10 +1,10 @@
 ﻿using System.Net;
 using System.Security.Claims;
 using System.Text.Json;
-using TP5_Servicios_API_REST.Data;
-using TP5_Servicios_API_REST.Models;
+using TP6_Servicios_API_REST.Data;
+using TP6_Servicios_API_REST.Models;
 
-namespace TP5_Servicios_API_REST.Middlewares
+namespace TP6_Servicios_API_REST.Middlewares
 {
     public class AuditoriaMiddleware
     {

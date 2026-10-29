@@ -4,10 +4,10 @@ using Microsoft.EntityFrameworkCore;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
-using TP5_Servicios_API_REST.Data;
-using TP5_Servicios_API_REST.Models;
+using TP6_Servicios_API_REST.Data;
+using TP6_Servicios_API_REST.Models;
 
-namespace TP5_Servicios_API_REST.Controllers
+namespace TP6_Servicios_API_REST.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]

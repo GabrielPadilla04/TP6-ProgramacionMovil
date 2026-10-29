@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace TP5_Servicios_API_REST.Models
+namespace TP6_Servicios_API_REST.Models
 {
     [Table("Carritos")]
     public class Carrito

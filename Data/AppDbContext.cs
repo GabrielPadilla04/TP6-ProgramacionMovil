@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using TP5_Servicios_API_REST.Models;
+using TP6_Servicios_API_REST.Models;
 
-namespace TP5_Servicios_API_REST.Data
+namespace TP6_Servicios_API_REST.Data
 {
     public class AppDbContext : DbContext
     {

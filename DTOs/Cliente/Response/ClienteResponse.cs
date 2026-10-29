@@ -1,4 +1,4 @@
-namespace TP5_Servicios_API_REST.DTOs.Cliente.Response
+namespace TP6_Shared.DTOs.Cliente.Response
 {
     public class ClienteResponse
     {

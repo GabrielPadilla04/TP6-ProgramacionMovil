@@ -1,4 +1,4 @@
-namespace TP5_Servicios_API_REST.DTOs.Cliente.Request
+namespace TP6_Shared.DTOs.Cliente.Request
 {
     public class CrearClienteRequest
     {

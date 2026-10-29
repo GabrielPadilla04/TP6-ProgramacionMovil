@@ -1,13 +1,13 @@
-using TP5_Servicios_API_REST.Excepciones;
-using TP5_Servicios_API_REST.Services;
+using TP6_Servicios_API_REST.Excepciones;
+using TP6_Servicios_API_REST.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using TP5_Servicios_API_REST.DTOs.Cliente.Request;
-using TP5_Servicios_API_REST.DTOs.Cliente.Response;
-using TP5_Servicios_API_REST.Models;
+using TP6_Shared.DTOs.Cliente.Request;
+using TP6_Shared.DTOs.Cliente.Response;
+using TP6_Servicios_API_REST.Models;
 
-namespace TP5_Servicios_API_REST.Controllers
+namespace TP6_Servicios_API_REST.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]

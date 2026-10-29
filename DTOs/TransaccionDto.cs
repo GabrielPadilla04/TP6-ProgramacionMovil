@@ -1,4 +1,4 @@
-﻿namespace TP5_Servicios_API_REST.DTOs;
+﻿namespace TP6_Shared.DTOs;
 
 // --- DTOs para TRANSACCIONES (Auditoría / Historial) ---
 

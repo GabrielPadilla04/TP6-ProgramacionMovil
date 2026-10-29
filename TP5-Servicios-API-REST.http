@@ -1,6 +1,6 @@
-@TP5_Servicios_API_REST_HostAddress = http://localhost:5116
+@TP6_Servicios_API_REST_HostAddress = http://localhost:5116
 
-GET {{TP5_Servicios_API_REST_HostAddress}}/weatherforecast/
+GET {{TP6_Servicios_API_REST_HostAddress}}/weatherforecast/
 Accept: application/json
 
 ###

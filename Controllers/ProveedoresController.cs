@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using TP5_Servicios_API_REST.DTOs.Proveedor.Request;
-using TP5_Servicios_API_REST.DTOs.Proveedor.Response;
-using TP5_Servicios_API_REST.Excepciones;
-using TP5_Servicios_API_REST.Models;
-using TP5_Servicios_API_REST.Services;
+using TP6_Shared.DTOs.Proveedor.Request;
+using TP6_Shared.DTOs.Proveedor.Response;
+using TP6_Servicios_API_REST.Excepciones;
+using TP6_Servicios_API_REST.Models;
+using TP6_Servicios_API_REST.Services;
 
 namespace API.Controllers
 {

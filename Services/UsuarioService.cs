@@ -1,11 +1,11 @@
-using TP5_Servicios_API_REST.Data;
-using TP5_Servicios_API_REST.Excepciones;
-using TP5_Servicios_API_REST.Models;
+using TP6_Servicios_API_REST.Data;
+using TP6_Servicios_API_REST.Excepciones;
+using TP6_Servicios_API_REST.Models;
 using Microsoft.EntityFrameworkCore;
-using TP5_Servicios_API_REST.DTOs.Usuario.Input;
-using TP5_Servicios_API_REST.DTOs.Usuario.Output;
+using TP6_Shared.DTOs.Usuario.Input;
+using TP6_Shared.DTOs.Usuario.Output;
 
-namespace TP5_Servicios_API_REST.Services
+namespace TP6_Servicios_API_REST.Services
 {
     public class UsuarioService
     {

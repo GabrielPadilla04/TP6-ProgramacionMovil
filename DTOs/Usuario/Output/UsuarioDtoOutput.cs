@@ -1,5 +1,5 @@
 
-namespace TP5_Servicios_API_REST.DTOs.Usuario.Output
+namespace TP6_Shared.DTOs.Usuario.Output
 {
     // DTO General para listados o detalles
     public class UsuarioDtoOutput

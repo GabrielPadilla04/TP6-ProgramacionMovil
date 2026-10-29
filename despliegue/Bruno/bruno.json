@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "name": "TP5ServiciosAPIREST",
+  "name": "TP6ServiciosAPIREST",
   "type": "collection",
   "ignore": [
     "node_modules",

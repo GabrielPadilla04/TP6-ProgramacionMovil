@@ -1,4 +1,4 @@
-﻿namespace TP5_Servicios_API_REST.DTOs.Producto.Response
+﻿namespace TP6_Shared.DTOs.Producto.Response
 {
     public record ProductoImagenResponse(
         int Id,

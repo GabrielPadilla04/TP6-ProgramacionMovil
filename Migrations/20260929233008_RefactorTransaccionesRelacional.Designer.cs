@@ -5,11 +5,11 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using TP5_Servicios_API_REST.Data;
+using TP6_Servicios_API_REST.Data;
 
 #nullable disable
 
-namespace TP5_Servicios_API_REST.Migrations
+namespace TP6_Servicios_API_REST.Migrations
 {
     [DbContext(typeof(AppDbContext))]
     [Migration("20260929233008_RefactorTransaccionesRelacional")]
@@ -25,7 +25,7 @@ namespace TP5_Servicios_API_REST.Migrations
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
-            modelBuilder.Entity("TP5_Servicios_API_REST.Models.Categoria", b =>
+            modelBuilder.Entity("TP6_Servicios_API_REST.Models.Categoria", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -47,7 +47,7 @@ namespace TP5_Servicios_API_REST.Migrations
                     b.ToTable("Categorias");
                 });
 
-            modelBuilder.Entity("TP5_Servicios_API_REST.Models.Cliente", b =>
+            modelBuilder.Entity("TP6_Servicios_API_REST.Models.Cliente", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -78,7 +78,7 @@ namespace TP5_Servicios_API_REST.Migrations
                     b.ToTable("Clientes");
                 });
 
-            modelBuilder.Entity("TP5_Servicios_API_REST.Models.Imagen", b =>
+            modelBuilder.Entity("TP6_Servicios_API_REST.Models.Imagen", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -109,7 +109,7 @@ namespace TP5_Servicios_API_REST.Migrations
                     b.ToTable("Imagenes");
                 });
 
-            modelBuilder.Entity("TP5_Servicios_API_REST.Models.Ingreso", b =>
+            modelBuilder.Entity("TP6_Servicios_API_REST.Models.Ingreso", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -138,7 +138,7 @@ namespace TP5_Servicios_API_REST.Migrations
                     b.ToTable("Ingresos");
                 });
 
-            modelBuilder.Entity("TP5_Servicios_API_REST.Models.IngresoDetalle", b =>
+            modelBuilder.Entity("TP6_Servicios_API_REST.Models.IngresoDetalle", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -167,7 +167,7 @@ namespace TP5_Servicios_API_REST.Migrations
                     b.ToTable("IngresoDetalles");
                 });
 
-            modelBuilder.Entity("TP5_Servicios_API_REST.Models.Producto", b =>
+            modelBuilder.Entity("TP6_Servicios_API_REST.Models.Producto", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -209,7 +209,7 @@ namespace TP5_Servicios_API_REST.Migrations
                     b.ToTable("Productos");
                 });
 
-            modelBuilder.Entity("TP5_Servicios_API_REST.Models.Proveedor", b =>
+            modelBuilder.Entity("TP6_Servicios_API_REST.Models.Proveedor", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -240,7 +240,7 @@ namespace TP5_Servicios_API_REST.Migrations
                     b.ToTable("Proveedores");
                 });
 
-            modelBuilder.Entity("TP5_Servicios_API_REST.Models.Salida", b =>
+            modelBuilder.Entity("TP6_Servicios_API_REST.Models.Salida", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -269,7 +269,7 @@ namespace TP5_Servicios_API_REST.Migrations
                     b.ToTable("Salidas");
                 });
 
-            modelBuilder.Entity("TP5_Servicios_API_REST.Models.SalidaDetalle", b =>
+            modelBuilder.Entity("TP6_Servicios_API_REST.Models.SalidaDetalle", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -298,7 +298,7 @@ namespace TP5_Servicios_API_REST.Migrations
                     b.ToTable("SalidaDetalles");
                 });
 
-            modelBuilder.Entity("TP5_Servicios_API_REST.Models.Transaccion", b =>
+            modelBuilder.Entity("TP6_Servicios_API_REST.Models.Transaccion", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -333,7 +333,7 @@ namespace TP5_Servicios_API_REST.Migrations
                     b.ToTable("Transacciones");
                 });
 
-            modelBuilder.Entity("TP5_Servicios_API_REST.Models.Usuario", b =>
+            modelBuilder.Entity("TP6_Servicios_API_REST.Models.Usuario", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -371,15 +371,15 @@ namespace TP5_Servicios_API_REST.Migrations
                     b.ToTable("Usuarios");
                 });
 
-            modelBuilder.Entity("TP5_Servicios_API_REST.Models.Ingreso", b =>
+            modelBuilder.Entity("TP6_Servicios_API_REST.Models.Ingreso", b =>
                 {
-                    b.HasOne("TP5_Servicios_API_REST.Models.Proveedor", "Proveedor")
+                    b.HasOne("TP6_Servicios_API_REST.Models.Proveedor", "Proveedor")
                         .WithMany("Ingresos")
                         .HasForeignKey("ProveedorId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("TP5_Servicios_API_REST.Models.Usuario", "Usuario")
+                    b.HasOne("TP6_Servicios_API_REST.Models.Usuario", "Usuario")
                         .WithMany("Ingresos")
                         .HasForeignKey("UsuarioId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -390,15 +390,15 @@ namespace TP5_Servicios_API_REST.Migrations
                     b.Navigation("Usuario");
                 });
 
-            modelBuilder.Entity("TP5_Servicios_API_REST.Models.IngresoDetalle", b =>
+            modelBuilder.Entity("TP6_Servicios_API_REST.Models.IngresoDetalle", b =>
                 {
-                    b.HasOne("TP5_Servicios_API_REST.Models.Ingreso", "Ingreso")
+                    b.HasOne("TP6_Servicios_API_REST.Models.Ingreso", "Ingreso")
                         .WithMany("Detalles")
                         .HasForeignKey("IngresoId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("TP5_Servicios_API_REST.Models.Producto", "Producto")
+                    b.HasOne("TP6_Servicios_API_REST.Models.Producto", "Producto")
                         .WithMany("IngresoDetalles")
                         .HasForeignKey("ProductoId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -409,15 +409,15 @@ namespace TP5_Servicios_API_REST.Migrations
                     b.Navigation("Producto");
                 });
 
-            modelBuilder.Entity("TP5_Servicios_API_REST.Models.Producto", b =>
+            modelBuilder.Entity("TP6_Servicios_API_REST.Models.Producto", b =>
                 {
-                    b.HasOne("TP5_Servicios_API_REST.Models.Categoria", "Categoria")
+                    b.HasOne("TP6_Servicios_API_REST.Models.Categoria", "Categoria")
                         .WithMany("Productos")
                         .HasForeignKey("CategoriaId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("TP5_Servicios_API_REST.Models.Imagen", "Imagen")
+                    b.HasOne("TP6_Servicios_API_REST.Models.Imagen", "Imagen")
                         .WithMany()
                         .HasForeignKey("ImagenId");
 
@@ -426,15 +426,15 @@ namespace TP5_Servicios_API_REST.Migrations
                     b.Navigation("Imagen");
                 });
 
-            modelBuilder.Entity("TP5_Servicios_API_REST.Models.Salida", b =>
+            modelBuilder.Entity("TP6_Servicios_API_REST.Models.Salida", b =>
                 {
-                    b.HasOne("TP5_Servicios_API_REST.Models.Cliente", "Cliente")
+                    b.HasOne("TP6_Servicios_API_REST.Models.Cliente", "Cliente")
                         .WithMany("Salidas")
                         .HasForeignKey("ClienteId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("TP5_Servicios_API_REST.Models.Usuario", "Usuario")
+                    b.HasOne("TP6_Servicios_API_REST.Models.Usuario", "Usuario")
                         .WithMany("Salidas")
                         .HasForeignKey("UsuarioId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -445,15 +445,15 @@ namespace TP5_Servicios_API_REST.Migrations
                     b.Navigation("Usuario");
                 });
 
-            modelBuilder.Entity("TP5_Servicios_API_REST.Models.SalidaDetalle", b =>
+            modelBuilder.Entity("TP6_Servicios_API_REST.Models.SalidaDetalle", b =>
                 {
-                    b.HasOne("TP5_Servicios_API_REST.Models.Producto", "Producto")
+                    b.HasOne("TP6_Servicios_API_REST.Models.Producto", "Producto")
                         .WithMany("SalidaDetalles")
                         .HasForeignKey("ProductoId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("TP5_Servicios_API_REST.Models.Salida", "Salida")
+                    b.HasOne("TP6_Servicios_API_REST.Models.Salida", "Salida")
                         .WithMany("Detalles")
                         .HasForeignKey("SalidaId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -464,19 +464,19 @@ namespace TP5_Servicios_API_REST.Migrations
                     b.Navigation("Salida");
                 });
 
-            modelBuilder.Entity("TP5_Servicios_API_REST.Models.Transaccion", b =>
+            modelBuilder.Entity("TP6_Servicios_API_REST.Models.Transaccion", b =>
                 {
-                    b.HasOne("TP5_Servicios_API_REST.Models.Ingreso", "Ingreso")
+                    b.HasOne("TP6_Servicios_API_REST.Models.Ingreso", "Ingreso")
                         .WithMany()
                         .HasForeignKey("IngresoId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("TP5_Servicios_API_REST.Models.Salida", "Salida")
+                    b.HasOne("TP6_Servicios_API_REST.Models.Salida", "Salida")
                         .WithMany()
                         .HasForeignKey("SalidaId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("TP5_Servicios_API_REST.Models.Usuario", "Usuario")
+                    b.HasOne("TP6_Servicios_API_REST.Models.Usuario", "Usuario")
                         .WithMany()
                         .HasForeignKey("UsuarioId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -489,39 +489,39 @@ namespace TP5_Servicios_API_REST.Migrations
                     b.Navigation("Usuario");
                 });
 
-            modelBuilder.Entity("TP5_Servicios_API_REST.Models.Categoria", b =>
+            modelBuilder.Entity("TP6_Servicios_API_REST.Models.Categoria", b =>
                 {
                     b.Navigation("Productos");
                 });
 
-            modelBuilder.Entity("TP5_Servicios_API_REST.Models.Cliente", b =>
+            modelBuilder.Entity("TP6_Servicios_API_REST.Models.Cliente", b =>
                 {
                     b.Navigation("Salidas");
                 });
 
-            modelBuilder.Entity("TP5_Servicios_API_REST.Models.Ingreso", b =>
+            modelBuilder.Entity("TP6_Servicios_API_REST.Models.Ingreso", b =>
                 {
                     b.Navigation("Detalles");
                 });
 
-            modelBuilder.Entity("TP5_Servicios_API_REST.Models.Producto", b =>
+            modelBuilder.Entity("TP6_Servicios_API_REST.Models.Producto", b =>
                 {
                     b.Navigation("IngresoDetalles");
 
                     b.Navigation("SalidaDetalles");
                 });
 
-            modelBuilder.Entity("TP5_Servicios_API_REST.Models.Proveedor", b =>
+            modelBuilder.Entity("TP6_Servicios_API_REST.Models.Proveedor", b =>
                 {
                     b.Navigation("Ingresos");
                 });
 
-            modelBuilder.Entity("TP5_Servicios_API_REST.Models.Salida", b =>
+            modelBuilder.Entity("TP6_Servicios_API_REST.Models.Salida", b =>
                 {
                     b.Navigation("Detalles");
                 });
 
-            modelBuilder.Entity("TP5_Servicios_API_REST.Models.Usuario", b =>
+            modelBuilder.Entity("TP6_Servicios_API_REST.Models.Usuario", b =>
                 {
                     b.Navigation("Ingresos");
 

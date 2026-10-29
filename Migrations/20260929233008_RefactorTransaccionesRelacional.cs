@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace TP5_Servicios_API_REST.Migrations
+namespace TP6_Servicios_API_REST.Migrations
 {
     /// <inheritdoc />
     public partial class RefactorTransaccionesRelacional : Migration

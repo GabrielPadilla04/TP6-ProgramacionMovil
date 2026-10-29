@@ -1,4 +1,4 @@
-﻿namespace TP5_Servicios_API_REST.Models
+﻿namespace TP6_Servicios_API_REST.Models
 {
     public class Transaccion
     {

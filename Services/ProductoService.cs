@@ -1,11 +1,11 @@
-using TP5_Servicios_API_REST.Data;
-using TP5_Servicios_API_REST.Excepciones;
-using TP5_Servicios_API_REST.Models;
+using TP6_Servicios_API_REST.Data;
+using TP6_Servicios_API_REST.Excepciones;
+using TP6_Servicios_API_REST.Models;
 using Microsoft.EntityFrameworkCore;
-using TP5_Servicios_API_REST.DTOs.Producto.Request;
-using TP5_Servicios_API_REST.DTOs.Producto.Response;
+using TP6_Shared.DTOs.Producto.Request;
+using TP6_Shared.DTOs.Producto.Response;
 
-namespace TP5_Servicios_API_REST.Services
+namespace TP6_Servicios_API_REST.Services
 {
     public class ProductoService
     {

@@ -1,4 +1,4 @@
-namespace TP5_Servicios_API_REST.DTOs.Usuario.Input
+namespace TP6_Shared.DTOs.Usuario.Input
 {
     public class UsuarioDtoInput
     {

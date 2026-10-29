@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="../TP6-FrontEnd/TP6-FrontEnd.csproj" Id="89541f83-e5b1-40d1-9c0d-3a9a6bf051c3" />
+  <Project Path="../TP6.Shared/TP6-Shared.csproj" Id="a02a2056-7ce9-4519-93f6-e60c10de06bd" />
+  <Project Path="TP6-Servicios-API-REST.csproj" />
+</Solution>

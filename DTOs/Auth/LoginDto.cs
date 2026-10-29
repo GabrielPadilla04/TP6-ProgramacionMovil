@@ -1,4 +1,6 @@
-﻿namespace TP5_Servicios_API_REST.DTOs.Auth
+﻿
+
+namespace TP6_Shared.DTOs.Auth
 {
     public class LoginDto
     {

@@ -1,4 +1,4 @@
-namespace TP5_Servicios_API_REST.DTOs.Proveedor.Request
+namespace TP6_Shared.DTOs.Proveedor.Request
 {
     public class CrearProveedorRequest
     {

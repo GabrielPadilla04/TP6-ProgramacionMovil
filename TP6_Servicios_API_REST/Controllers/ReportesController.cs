@@ -11,7 +11,7 @@ namespace TP6_Servicios_API_REST.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = Roles.Administrador)] // Usando tu constante segura de roles
+    [Authorize(Roles = Roles.Administrador)]
     public class ReportesController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -19,20 +19,23 @@ namespace TP6_Servicios_API_REST.Controllers
         public ReportesController(AppDbContext context)
         {
             _context = context;
+            // Licencia comunitaria gratuita requerida por QuestPDF
             QuestPDF.Settings.License = LicenseType.Community;
         }
 
         [HttpGet("general-pdf")]
         public async Task<IActionResult> DescargarReporteGeneral()
         {
-            var productos = await _context.Productos.ToListAsync();
+            var productos = await _context.Productos.AsNoTracking().ToListAsync();
 
             var entradas = await _context.Set<Ingreso>()
+                .AsNoTracking()
                 .Include(e => e.Detalles)
                 .ThenInclude(d => d.Producto)
                 .ToListAsync();
 
             var ventas = await _context.Set<Salida>()
+                .AsNoTracking()
                 .Include(v => v.Detalles)
                 .ThenInclude(d => d.Producto)
                 .ToListAsync();
@@ -51,8 +54,10 @@ namespace TP6_Servicios_API_REST.Controllers
                     {
                         row.RelativeItem().Column(col =>
                         {
-                            col.Item().Text("SISTEMA INVENTARIO - REPORTE GENERAL DEL NEGOCIO").Bold().FontSize(14).FontColor(Colors.Blue.Darken2);
-                            col.Item().Text($"Fecha de emisión: {DateTime.Now:dd/MM/yyyy HH:mm}").FontSize(8).FontColor(Colors.Grey.Medium);
+                            col.Item().Text("SISTEMA INVENTARIO - REPORTE GENERAL DEL NEGOCIO")
+                               .Bold().FontSize(14).FontColor(Colors.Blue.Darken2);
+                            col.Item().Text($"Fecha de emisión: {DateTime.Now:dd/MM/yyyy HH:mm}")
+                               .FontSize(8).FontColor(Colors.Grey.Medium);
                         });
                     });
 

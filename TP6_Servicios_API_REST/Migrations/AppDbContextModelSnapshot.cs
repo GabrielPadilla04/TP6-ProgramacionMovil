@@ -290,14 +290,9 @@ namespace TP6_Servicios_API_REST.Migrations
                     b.Property<decimal>("Total")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<int>("UsuarioId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
                     b.HasIndex("ClienteId");
-
-                    b.HasIndex("UsuarioId");
 
                     b.ToTable("Salidas");
                 });
@@ -470,21 +465,13 @@ namespace TP6_Servicios_API_REST.Migrations
 
             modelBuilder.Entity("TP6_Servicios_API_REST.Models.Salida", b =>
                 {
-                    b.HasOne("TP6_Servicios_API_REST.Models.Cliente", "Cliente")
+                    b.HasOne("TP6_Servicios_API_REST.Models.Usuario", "Cliente")
                         .WithMany("Salidas")
                         .HasForeignKey("ClienteId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("TP6_Servicios_API_REST.Models.Usuario", "Usuario")
-                        .WithMany("Salidas")
-                        .HasForeignKey("UsuarioId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Cliente");
-
-                    b.Navigation("Usuario");
                 });
 
             modelBuilder.Entity("TP6_Servicios_API_REST.Models.SalidaDetalle", b =>
@@ -515,8 +502,7 @@ namespace TP6_Servicios_API_REST.Migrations
 
                     b.HasOne("TP6_Servicios_API_REST.Models.Salida", "Salida")
                         .WithMany()
-                        .HasForeignKey("SalidaId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("SalidaId");
 
                     b.HasOne("TP6_Servicios_API_REST.Models.Usuario", "Usuario")
                         .WithMany()
@@ -534,11 +520,6 @@ namespace TP6_Servicios_API_REST.Migrations
             modelBuilder.Entity("TP6_Servicios_API_REST.Models.Categoria", b =>
                 {
                     b.Navigation("Productos");
-                });
-
-            modelBuilder.Entity("TP6_Servicios_API_REST.Models.Cliente", b =>
-                {
-                    b.Navigation("Salidas");
                 });
 
             modelBuilder.Entity("TP6_Servicios_API_REST.Models.Ingreso", b =>

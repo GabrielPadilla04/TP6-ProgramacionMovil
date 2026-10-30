@@ -11,11 +11,11 @@ namespace TP6_Servicios_API_REST.Models
         [Column(TypeName = "decimal(18,2)")]
         public decimal Total { get; set; }
 
-        // ÚNICA relación con el usuario comprador
         public int ClienteId { get; set; }
 
         [ForeignKey("ClienteId")]
         public Usuario Cliente { get; set; } = null!;
+
 
         // Detalle de venta
         public ICollection<SalidaDetalle> Detalles { get; set; } = new List<SalidaDetalle>();

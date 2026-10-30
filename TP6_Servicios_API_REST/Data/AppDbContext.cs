@@ -47,10 +47,11 @@ namespace TP6_Servicios_API_REST.Data
                       .HasForeignKey(t => t.IngresoId)
                       .OnDelete(DeleteBehavior.Restrict);
 
-                entity.HasOne(t => t.Salida)
-                      .WithMany()
-                      .HasForeignKey(t => t.SalidaId)
-                      .OnDelete(DeleteBehavior.Restrict);
+                modelBuilder.Entity<Salida>()
+                    .HasOne(s => s.Cliente)           // Propiedad de navegación en Salida.cs
+                    .WithMany(u => u.Salidas)         // Colección de salidas en Usuario.cs
+                    .HasForeignKey(s => s.ClienteId)  // La ÚNICA clave foránea real
+                    .OnDelete(DeleteBehavior.Restrict);
             });
         }
     }

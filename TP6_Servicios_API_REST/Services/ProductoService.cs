@@ -148,6 +148,7 @@ namespace TP6_Servicios_API_REST.Services
                 producto.Nombre = dto.Nombre;
                 producto.Descripcion = dto.Descripcion;
                 producto.Precio = dto.Precio;
+                producto.Stock = dto.Stock;
                 producto.CategoriaId = dto.CategoriaId;
 
                 if (!string.IsNullOrEmpty(dto.ImagenUrl))

@@ -123,20 +123,20 @@ namespace TP6_Servicios_API_REST.Services
         {
             try
             {
-                // Usamos Include para traer el historial de salidas (ventas) de este cliente
-                var cliente = await _context.Clientes
-                    .Include(c => c.Salidas)
-                    .FirstOrDefaultAsync(c => c.Id == id);
+                // Buscamos el cliente directamente (sin Include)
+                var cliente = await _context.Clientes.FindAsync(id);
 
                 if (cliente == null)
                 {
                     throw new RecursoNoExisteException($"No se encontró el cliente con ID {id}.");
                 }
 
-                // VALIDACIÓN: Si ya le vendimos algo, bloqueamos el borrado
-                if (cliente.Salidas != null && cliente.Salidas.Any())
+                // VALIDACIÓN: Consultamos directamente a la tabla Salidas si existe alguna con este ClienteId
+                var cantidadSalidas = await _context.Salidas.CountAsync(s => s.ClienteId == id);
+
+                if (cantidadSalidas > 0)
                 {
-                    throw new DatosLlegaronErradosException($"No se puede eliminar el cliente '{cliente.Nombre}' porque tiene un historial de {cliente.Salidas.Count} salida(s) registrada(s).");
+                    throw new DatosLlegaronErradosException($"No se puede eliminar el cliente '{cliente.Nombre}' porque tiene un historial de {cantidadSalidas} salida(s) registrada(s).");
                 }
 
                 _context.Clientes.Remove(cliente);

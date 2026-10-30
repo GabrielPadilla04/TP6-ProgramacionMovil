@@ -18,6 +18,16 @@
 
     <script src="_framework/blazor.webview.js"></script>
 
+    <script>
+        window.descargarArchivo = function (nombreArchivo, base64String) {
+            const link = document.createElement('a');
+            link.download = nombreArchivo;
+            link.href = "data:application/pdf;base64," + base64String;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
+    </script>
 </body>
 
 </html>

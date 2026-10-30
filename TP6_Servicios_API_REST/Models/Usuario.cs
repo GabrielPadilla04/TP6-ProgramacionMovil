@@ -24,7 +24,6 @@ namespace TP6_Servicios_API_REST.Models
         // Relaciones (1 a N)
         public ICollection<Ingreso> Ingresos { get; set; } = new List<Ingreso>();
 
-        [InverseProperty("Cliente")]
         public ICollection<Salida> Salidas { get; set; } = new List<Salida>();
     }
 }

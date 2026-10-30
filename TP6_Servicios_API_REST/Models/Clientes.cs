@@ -16,9 +16,6 @@ namespace TP6_Servicios_API_REST.Models
         public string? Telefono { get; set; }
 
         [EmailAddress, MaxLength(100)]
-        public string? Email { get; set; }
-
-        // Relación con Salidas
-        public ICollection<Salida> Salidas { get; set; } = new List<Salida>();
+        public string? Email { get; set; }        
     }
 }

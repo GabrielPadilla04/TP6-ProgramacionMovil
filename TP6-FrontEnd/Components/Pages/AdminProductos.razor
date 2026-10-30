@@ -5,6 +5,8 @@
 @inject IProductoService ProductoService
 @inject IAuthService AuthService
 @inject NavigationManager NavManager
+@inject HttpClient Http
+@inject IJSRuntime JS
 
 <div class="container mt-4 mb-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -12,9 +14,23 @@
             <h2>Gestión de Productos</h2>
             <p class="text-muted mb-0">Panel exclusivo de administración</p>
         </div>
-        <button class="btn btn-primary" @onclick="AbrirModalCrear">
-            <span class="bi bi-plus-lg me-1"></span> Nuevo Producto
-        </button>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-danger" @onclick="DescargarReportePdf" disabled="@descargandoReporte">
+                @if (descargandoReporte)
+                {
+                    <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                    <span>Generando PDF...</span>
+                }
+                else
+                {
+                    <span class="bi bi-file-earmark-pdf me-1"></span>
+                    <span>Descargar Reporte PDF</span>
+                }
+            </button>
+            <button class="btn btn-primary" @onclick="AbrirModalCrear">
+                <span class="bi bi-plus-lg me-1"></span> Nuevo Producto
+            </button>
+        </div>
     </div>
 
     @if (!string.IsNullOrWhiteSpace(mensajeAlerta))
@@ -48,6 +64,7 @@
                             <th style="width: 80px;">Imagen</th>
                             <th>Nombre</th>
                             <th>Precio</th>
+                            <th>Stock</th>
                             <th class="text-end">Acciones</th>
                         </tr>
                     </thead>
@@ -66,6 +83,20 @@
                                     <small class="text-muted">ID: @prod.Id</small>
                                 </td>
                                 <td>$@prod.Precio</td>
+                                <td>
+                                    @if (prod.Stock <= 0)
+                                    {
+                                        <span class="badge bg-danger">Agotado (0)</span>
+                                    }
+                                    else if (prod.Stock <= 5)
+                                    {
+                                        <span class="badge bg-warning text-dark">Bajo (@prod.Stock)</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success">@prod.Stock unid.</span>
+                                    }
+                                </td>
                                 <td class="text-end">
                                     <button class="btn btn-sm btn-outline-secondary me-2" @onclick="() => AbrirModalEditar(prod.Id)">
                                         Editar
@@ -107,13 +138,13 @@
                             <label class="form-label">Precio</label>
                             <input type="number" step="0.01" class="form-control" @bind="formPrecio" />
                         </div>
-                        @if (!esEdicion)
-                        {
-                            <div class="col-6 mb-3">
-                                <label class="form-label">Stock inicial</label>
-                                <input type="number" class="form-control" @bind="formStock" />
-                            </div>
-                        }
+
+                        <!-- El campo de stock visible tanto en Alta como en Edición -->
+                        <div class="col-6 mb-3">
+                            <label class="form-label">@(esEdicion ? "Stock Actual / Reposición" : "Stock Inicial")</label>
+                            <input type="number" min="0" class="form-control" @bind="formStock" />
+                        </div>
+
                         <div class="col-6 mb-3">
                             <label class="form-label">ID Categoría</label>
                             <input type="number" class="form-control" @bind="formCategoriaId" />
@@ -135,7 +166,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="CerrarModal">Cancelar</button>
+                    <button type="button" class="btn-secondary btn" @onclick="CerrarModal">Cancelar</button>
                     <button type="button" class="btn btn-primary" @onclick="GuardarProducto" disabled="@procesandoGuardado">
                         @(procesandoGuardado ? "Guardando..." : "Guardar")
                     </button>
@@ -149,6 +180,7 @@
     private List<ProductoListadoResponse> productos = new();
     private bool cargando = true;
     private bool procesandoGuardado = false;
+    private bool descargandoReporte = false;
     private string? mensajeAlerta;
     private string claseAlerta = "alert-success";
 
@@ -187,6 +219,37 @@
         cargando = false;
     }
 
+    private async Task DescargarReportePdf()
+    {
+        descargandoReporte = true;
+        try
+        {
+            var respuesta = await Http.GetAsync("api/reportes/general-pdf");
+
+            if (respuesta.IsSuccessStatusCode)
+            {
+                var bytes = await respuesta.Content.ReadAsByteArrayAsync();
+                var base64 = Convert.ToBase64String(bytes);
+                var nombreArchivo = $"Reporte_General_{DateTime.Now:yyyyMMdd_HHmm}.pdf";
+
+                await JS.InvokeVoidAsync("descargarArchivo", nombreArchivo, base64);
+                MostrarMensaje("Reporte PDF generado y descargado correctamente.", "alert-success");
+            }
+            else
+            {
+                MostrarMensaje($"Error al generar el reporte PDF (Código HTTP: {respuesta.StatusCode}).", "alert-danger");
+            }
+        }
+        catch (Exception ex)
+        {
+            MostrarMensaje($"Ocurrió un error al descargar el reporte: {ex.Message}", "alert-danger");
+        }
+        finally
+        {
+            descargandoReporte = false;
+        }
+    }
+
     private void AbrirModalCrear()
     {
         esEdicion = false;
@@ -215,6 +278,7 @@
         formNombre = prod.Nombre;
         formDescripcion = prod.Descripcion;
         formPrecio = prod.Precio;
+        formStock = prod.Stock;
         formCategoriaId = prod.CategoriaId;
         formImagenUrl = prod.ImagenUrl;
         archivoSeleccionado = null;
@@ -251,6 +315,12 @@
             return;
         }
 
+        if (formStock < 0)
+        {
+            MostrarMensaje("El stock no puede ser un número negativo.", "alert-warning");
+            return;
+        }
+
         procesandoGuardado = true;
         int idProductoFinal = 0;
 
@@ -261,6 +331,7 @@
                 Nombre = formNombre,
                 Descripcion = formDescripcion,
                 Precio = formPrecio,
+                Stock = formStock,
                 CategoriaId = formCategoriaId,
                 ImagenUrl = formImagenUrl
             };
@@ -302,7 +373,6 @@
             }
         }
 
-        // Si se eligió una foto desde el dispositivo, se sube por el endpoint de imagen
         if (archivoSeleccionado != null && idProductoFinal > 0)
         {
             try
@@ -321,7 +391,7 @@
             }
         }
 
-        MostrarMensaje(esEdicion ? "Producto actualizado exitosamente." : "Producto creado exitosamente.", "alert-success");
+        MostrarMensaje(esEdicion ? "Producto y stock actualizados exitosamente." : "Producto creado exitosamente.", "alert-success");
         CerrarModal();
         await CargarProductos();
 

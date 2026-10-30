@@ -3,6 +3,8 @@
 @using TP6_Shared.DTOs.Producto.Response
 @using TP6_FrontEnd.Services
 @inject IProductoService ProductoService
+@inject IAuthService AuthService
+@inject NavigationManager NavManager
 
 <div class="container mt-4">
     <!-- Buscador y Filtros -->
@@ -96,9 +98,23 @@
     private bool cargando = true;
     private string? mensajeError;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await CargarProductos();
+        if (firstRender)
+        {
+            // Verificamos si el usuario tiene sesión activa ANTES de pegarle a la API
+            var autenticado = await AuthService.EstaAutenticadoAsync();
+
+            if (!autenticado)
+            {
+                NavManager.NavigateTo("/login");
+                return;
+            }
+
+            // Si está logueado, continúa normalmente
+            await CargarProductos();
+            StateHasChanged();
+        }
     }
 
     private async Task CargarProductos()
@@ -130,15 +146,18 @@
 
         var query = productosOriginales.AsEnumerable();
 
+        // 1. Filtro por nombre
         if (!string.IsNullOrWhiteSpace(textoBusqueda))
         {
             query = query.Where(p => p.Nombre.Contains(textoBusqueda, StringComparison.OrdinalIgnoreCase));
         }
 
-        // if (!string.IsNullOrWhiteSpace(categoriaSeleccionada))
-        // {
-        //     query = query.Where(p => p.Categoria == categoriaSeleccionada);
-        // }
+        // 2. Filtro por categoría (Agregado)
+        if (!string.IsNullOrWhiteSpace(categoriaSeleccionada))
+        {
+            query = query.Where(p => p.CategoriaNombre != null &&
+                                     p.CategoriaNombre.Equals(categoriaSeleccionada, StringComparison.OrdinalIgnoreCase));
+        }
 
         productosMostrados = query.ToList();
     }

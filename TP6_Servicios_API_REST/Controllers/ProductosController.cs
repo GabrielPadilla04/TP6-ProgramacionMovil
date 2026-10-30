@@ -24,7 +24,7 @@ namespace TP6_Servicios_API_REST.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = $"{Roles.Administrador},{Roles.Usuario}")]
+        [Authorize(Roles = $"{Roles.Administrador},{Roles.Cliente},{Roles.Usuario}")]
         public async Task<ActionResult<List<ProductoListadoResponse>>> ObtenerTodos([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             try
@@ -38,7 +38,7 @@ namespace TP6_Servicios_API_REST.Controllers
         }
 
         [HttpGet("{id}")]
-        [Authorize(Roles = $"{Roles.Administrador},{Roles.Usuario}")]
+        [Authorize(Roles = $"{Roles.Administrador},{Roles.Cliente},{Roles.Usuario}")]
         public async Task<ActionResult<ProductoResponse>> ObtenerPorId(int id)
         {
             try

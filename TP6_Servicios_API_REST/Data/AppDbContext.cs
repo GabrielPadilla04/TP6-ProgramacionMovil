@@ -37,11 +37,7 @@ namespace TP6_Servicios_API_REST.Data
                 .OnDelete(DeleteBehavior.Restrict);
 
             // Restricción para evitar borrado en cascada cíclico en Salidas
-            modelBuilder.Entity<Salida>()
-                .HasOne(s => s.Usuario)
-                .WithMany(s => s.Salidas)
-                .HasForeignKey(s => s.UsuarioId)
-                .OnDelete(DeleteBehavior.Restrict);
+           
 
             // Mapeo exacto del Diagrama ER para Transacciones (FKs Opcionales / Nullable)
             modelBuilder.Entity<Transaccion>(entity =>

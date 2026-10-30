@@ -4,16 +4,10 @@ namespace TP6_FrontEnd.Services
 {
     public class AuthHeaderHandler : DelegatingHandler
     {
-        private readonly IAuthService _authService;
-
-        public AuthHeaderHandler(IAuthService authService)
-        {
-            _authService = authService;
-        }
-
+        
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            var token = await _authService.ObtenerTokenAsync();
+            var token = Preferences.Default.Get("jwt_token", (string?)null);
 
             if (!string.IsNullOrWhiteSpace(token))
             {

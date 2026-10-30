@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:local="clr-namespace:TP6_FrontEnd"
              xmlns:components="clr-namespace:TP6_FrontEnd.Components"
+             xmlns:pages="clr-namespace:TP6_FrontEnd.Components.Pages"
              x:Class="TP6_FrontEnd.MainPage">
 
     <BlazorWebView x:Name="blazorWebView" HostPage="wwwroot/index.html">

@@ -27,7 +27,7 @@ namespace TP6_FrontEnd
             builder.Services.AddTransient<AuthHeaderHandler>();
 
             // Configuración de red e inyección de HttpClient
-            string baseUrl = "https://h1tjpbkm-7235.brs.devtunnels.ms/";
+            string baseUrl = "https://localhost:7235/";
             builder.Services.AddScoped(sp =>
             {
                 var handler = sp.GetRequiredService<AuthHeaderHandler>();

@@ -8,6 +8,7 @@ namespace TP6_FrontEnd.Services
         Task LogoutAsync();
         Task<string?> ObtenerTokenAsync();
         Task<int?> ObtenerUsuarioIdAsync();
+        Task<bool> RegistrarAsync(RegisterDto dto);
         Task<string?> ObtenerRolAsync();
         Task<string?> ObtenerEmailAsync();
         Task<bool> EstaAutenticadoAsync();

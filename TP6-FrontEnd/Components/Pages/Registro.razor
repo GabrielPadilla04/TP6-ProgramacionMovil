@@ -1,0 +1,119 @@
+﻿@page "/registro"
+@layout Layout.LoginLayout
+@using System.ComponentModel.DataAnnotations
+@using TP6_Shared.DTOs.Auth
+@using TP6_FrontEnd.Services
+@inject NavigationManager NavManager
+@inject IAuthService AuthService
+
+<div class="card shadow-sm" style="width: 100%; max-width: 450px;">
+    <div class="card-body p-4">
+        <div class="text-center mb-4">
+            <h3 class="card-title fw-bold">Crear Cuenta</h3>
+            <p class="text-muted">Completá tus datos para registrarte</p>
+        </div>
+
+        <EditForm Model="@registroModel" OnValidSubmit="ProcesarRegistro">
+            <DataAnnotationsValidator />
+
+            @if (!string.IsNullOrEmpty(mensajeError))
+            {
+                <div class="alert alert-danger py-2 text-center" role="alert">
+                    @mensajeError
+                </div>
+            }
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Nombre completo</label>
+                <InputText class="form-control" @bind-Value="registroModel.Nombre" placeholder="Ej: Valentín Montes" />
+                <ValidationMessage For="@(() => registroModel.Nombre)" class="text-danger small" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Email</label>
+                <InputText type="email" class="form-control" @bind-Value="registroModel.Email" placeholder="correo@ejemplo.com" />
+                <ValidationMessage For="@(() => registroModel.Email)" class="text-danger small" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Contraseña</label>
+                <InputText type="password" class="form-control" @bind-Value="registroModel.Password" placeholder="******" />
+                <ValidationMessage For="@(() => registroModel.Password)" class="text-danger small" />
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label fw-semibold">Confirmar Contraseña</label>
+                <InputText type="password" class="form-control" @bind-Value="registroModel.ConfirmarPassword" placeholder="******" />
+                <ValidationMessage For="@(() => registroModel.ConfirmarPassword)" class="text-danger small" />
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 py-2 mb-3" disabled="@cargando">
+                @if (cargando)
+                {
+                    <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+                    <span>Registrando...</span>
+                }
+                else
+                {
+                    <span>Registrarme</span>
+                }
+            </button>
+
+            <div class="text-center mt-3">
+                <span class="text-muted">¿Ya tenés cuenta?</span>
+                <a href="/login" class="text-decoration-none fw-bold ms-1">Iniciá sesión acá</a>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private RegistroViewModel registroModel = new();
+    private bool cargando = false;
+    private string? mensajeError;
+
+    private async Task ProcesarRegistro()
+    {
+        cargando = true;
+        mensajeError = null;
+
+        var dto = new RegisterDto
+        {
+            NombreCompleto = registroModel.Nombre,
+            Email = registroModel.Email,
+            Password = registroModel.Password,
+            Rol = "Usuario" // Se fuerza como Cliente por seguridad en el registro público
+        };
+
+        var exito = await AuthService.RegistrarAsync(dto);
+
+        if (exito)
+        {
+            // Registro exitoso: redirige al login para que inicie sesión
+            NavManager.NavigateTo("/login");
+        }
+        else
+        {
+            mensajeError = "Ocurrió un error al registrarte. Es posible que el email ya esté en uso.";
+            cargando = false;
+        }
+    }
+
+    public class RegistroViewModel
+    {
+        [Required(ErrorMessage = "El nombre es obligatorio")]
+        public string Nombre { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "El email es obligatorio")]
+        [EmailAddress(ErrorMessage = "Formato de email inválido")]
+        public string Email { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "La contraseña es obligatoria")]
+        [MinLength(6, ErrorMessage = "La contraseña debe tener al menos 6 caracteres")]
+        public string Password { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Debes confirmar la contraseña")]
+        [Compare(nameof(Password), ErrorMessage = "Las contraseñas no coinciden")]
+        public string ConfirmarPassword { get; set; } = string.Empty;
+    }
+}

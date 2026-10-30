@@ -28,7 +28,8 @@ namespace TP6_FrontEnd.Services
                 if (resultado == null || string.IsNullOrWhiteSpace(resultado.Token))
                     return false;
 
-                await SecureStorage.Default.SetAsync(TokenKey, resultado.Token);
+                // Guardamos con Preferences
+                Preferences.Default.Set(TokenKey, resultado.Token);
                 return true;
             }
             catch (Exception ex)
@@ -40,7 +41,8 @@ namespace TP6_FrontEnd.Services
 
         public Task LogoutAsync()
         {
-            SecureStorage.Default.Remove(TokenKey);
+            // Borramos con Preferences
+            Preferences.Default.Remove(TokenKey);
             return Task.CompletedTask;
         }
 
@@ -61,7 +63,9 @@ namespace TP6_FrontEnd.Services
         }
         public async Task<string?> ObtenerTokenAsync()
         {
-            return await SecureStorage.Default.GetAsync(TokenKey);
+            // Preferences lee el dato de forma síncrona y segura
+            var token = Preferences.Default.Get(TokenKey, (string?)null);
+            return await Task.FromResult(token);
         }
 
         public async Task<string?> ObtenerRolAsync()
@@ -92,6 +96,19 @@ namespace TP6_FrontEnd.Services
             return null;
         }
 
+        public async Task<bool> RegistrarAsync(RegisterDto dto)
+        {
+            try
+            {
+                var response = await _httpClient.PostAsJsonAsync("api/auth/register", dto);
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error en Registro: {ex.Message}");
+                return false;
+            }
+        }
         public async Task<bool> EstaAutenticadoAsync()
         {
             var token = await ObtenerTokenAsync();

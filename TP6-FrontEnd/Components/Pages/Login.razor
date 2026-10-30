@@ -1,87 +1,78 @@
 ﻿@page "/login"
+@layout Layout.LoginLayout
 @using TP6_Shared.DTOs.Auth
 @using TP6_FrontEnd.Services
 @inject IAuthService AuthService
 @inject NavigationManager NavManager
 
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-12 col-md-6 col-lg-4">
-            <div class="card shadow-sm border-0">
-                <div class="card-body p-4">
-                    <h3 class="card-title text-center mb-4">Iniciar Sesión</h3>
-
-                    @if (!string.IsNullOrWhiteSpace(mensajeError))
-                    {
-                        <div class="alert alert-danger py-2" role="alert">
-                            @mensajeError
-                        </div>
-                    }
-
-                    <EditForm Model="loginModel" OnValidSubmit="ProcesarLogin">
-                        <DataAnnotationsValidator />
-
-                        <div class="mb-3">
-                            <label class="form-label">Correo electrónico</label>
-                            <InputText class="form-control"
-                                       @bind-Value="loginModel.Email"
-                                       placeholder="nombre@ejemplo.com" />
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Contraseña</label>
-                            <InputText type="password"
-                                       class="form-control"
-                                       @bind-Value="loginModel.Password"
-                                       placeholder="••••••••" />
-                        </div>
-
-                        <button type="submit" class="btn btn-primary w-100 py-2 mt-2" disabled="@cargando">
-                            @if (cargando)
-                            {
-                                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                <span>Verificando...</span>
-                            }
-                            else
-                            {
-                                <span>Ingresar</span>
-                            }
-                        </button>
-                    </EditForm>
-                </div>
-            </div>
+<div class="card shadow-sm" style="width: 100%; max-width: 400px;">
+    <div class="card-body p-4">
+        <div class="text-center mb-4">
+            <h3 class="card-title fw-bold">Bienvenido</h3>
+            <p class="text-muted">Ingresá a tu cuenta para continuar</p>
         </div>
+
+        <EditForm Model="@loginDto" OnValidSubmit="ProcesarLogin">
+            <DataAnnotationsValidator />
+
+            @if (!string.IsNullOrEmpty(mensajeError))
+            {
+                <div class="alert alert-danger py-2 text-center" role="alert">
+                    @mensajeError
+                </div>
+            }
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Email</label>
+                <InputText class="form-control" @bind-Value="loginDto.Email" placeholder="correo@ejemplo.com" />
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label fw-semibold">Contraseña</label>
+                <InputText type="password" class="form-control" @bind-Value="loginDto.Password" placeholder="******" />
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 py-2 mb-3" disabled="@cargando">
+                @if (cargando)
+                {
+                    <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+                    <span>Validando...</span>
+                }
+                else
+                {
+                    <span>Iniciar Sesión</span>
+                }
+            </button>
+
+            <div class="text-center mt-3">
+                <span class="text-muted">¿No tenés cuenta?</span>
+                <a href="/registro" class="text-decoration-none fw-bold ms-1">Registrate acá</a>
+            </div>
+        </EditForm>
     </div>
 </div>
 
 @code {
-    private LoginDto loginModel = new();
-    private string mensajeError = "";
+    private LoginDto loginDto = new();
     private bool cargando = false;
+    private string? mensajeError;
 
     private async Task ProcesarLogin()
     {
         cargando = true;
-        mensajeError = "";
+        mensajeError = null;
 
-        if (string.IsNullOrWhiteSpace(loginModel.Email) || string.IsNullOrWhiteSpace(loginModel.Password))
-        {
-            mensajeError = "Por favor, complete todos los campos.";
-            cargando = false;
-            return;
-        }
-
-        var exito = await AuthService.LoginAsync(loginModel);
+        var exito = await AuthService.LoginAsync(loginDto);
 
         if (exito)
         {
+            // Si el login es correcto, lo mandamos al catálogo
             NavManager.NavigateTo("/catalogo");
         }
         else
         {
-            mensajeError = "Correo o contraseña incorrectos.";
+            mensajeError = "Credenciales incorrectas o problema de red.";
+            cargando = false;
         }
-
-        cargando = false;
     }
 }

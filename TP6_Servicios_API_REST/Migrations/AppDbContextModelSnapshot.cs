@@ -164,6 +164,43 @@ namespace TP6_Servicios_API_REST.Migrations
                     b.ToTable("IngresoDetalles");
                 });
 
+            modelBuilder.Entity("TP6_Servicios_API_REST.Models.LogAuditoria", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Endpoint")
+                        .HasMaxLength(250)
+                        .HasColumnType("varchar(250)");
+
+                    b.Property<DateTime>("FechaHora")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("IdUsuario")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Mensaje")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Nivel")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("StackTrace")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdUsuario");
+
+                    b.ToTable("LogsAuditoria");
+                });
+
             modelBuilder.Entity("TP6_Servicios_API_REST.Models.Producto", b =>
                 {
                     b.Property<int>("Id")
@@ -183,8 +220,7 @@ namespace TP6_Servicios_API_REST.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("ImagenUrl")
-                        .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("LONGTEXT");
 
                     b.Property<string>("Nombre")
                         .IsRequired()
@@ -404,6 +440,15 @@ namespace TP6_Servicios_API_REST.Migrations
                     b.Navigation("Ingreso");
 
                     b.Navigation("Producto");
+                });
+
+            modelBuilder.Entity("TP6_Servicios_API_REST.Models.LogAuditoria", b =>
+                {
+                    b.HasOne("TP6_Servicios_API_REST.Models.Usuario", "Usuario")
+                        .WithMany()
+                        .HasForeignKey("IdUsuario");
+
+                    b.Navigation("Usuario");
                 });
 
             modelBuilder.Entity("TP6_Servicios_API_REST.Models.Producto", b =>

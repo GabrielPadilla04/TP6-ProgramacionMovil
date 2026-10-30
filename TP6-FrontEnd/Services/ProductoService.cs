@@ -14,9 +14,7 @@ namespace TP6_FrontEnd.Services
             _httpClient = httpClient;
         }
 
-        // ----------------------------------------------------
-        // LECTURA (PÚBLICOS / CLIENTES)
-        // ----------------------------------------------------
+        
 
         public async Task<List<ProductoListadoResponse>> ObtenerTodosAsync(int page = 1, int pageSize = 10)
         {

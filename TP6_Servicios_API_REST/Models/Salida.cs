@@ -6,17 +6,16 @@ namespace TP6_Servicios_API_REST.Models
     {
         public int Id { get; set; }
 
-        public DateTime Fecha { get; set; } = DateTime.Now;
+        public DateTime Fecha { get; set; } = DateTime.UtcNow;
 
         [Column(TypeName = "decimal(18,2)")]
         public decimal Total { get; set; }
 
-        // Claves Foráneas
+        // ÚNICA relación con el usuario comprador
         public int ClienteId { get; set; }
-        public Cliente Cliente { get; set; } = null!;
 
-        public int UsuarioId { get; set; }
-        public Usuario Usuario { get; set; } = null!;
+        [ForeignKey("ClienteId")]
+        public Usuario Cliente { get; set; } = null!;
 
         // Detalle de venta
         public ICollection<SalidaDetalle> Detalles { get; set; } = new List<SalidaDetalle>();

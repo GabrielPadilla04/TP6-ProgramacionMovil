@@ -37,14 +37,14 @@ namespace TP6_Servicios_API_REST.Controllers
                 NombreCompleto = dto.NombreCompleto,
                 Email = dto.Email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
-                Rol = Roles.Cliente, // Asignación fija y segura para el flujo normal
+                Rol = Roles.Usuario, // Asignación fija y segura para el flujo normal
                 FechaCreacion = DateTime.UtcNow
             };
 
             _context.Usuarios.Add(usuario);
             await _context.SaveChangesAsync();
 
-            return Ok(new { mensaje = "Cuenta de cliente creada correctamente." });
+            return Ok(new { mensaje = "Cuenta de Usuario creada correctamente." });
         }
 
         // 2. Registro PROTEGIDO: Solo un Administrador autenticado puede crear otro Administrador

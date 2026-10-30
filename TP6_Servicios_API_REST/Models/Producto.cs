@@ -18,7 +18,7 @@ namespace TP6_Servicios_API_REST.Models
 
         public int Stock { get; set; } = 0;
 
-        [MaxLength(255)]
+        [Column(TypeName = "LONGTEXT")]
         public string? ImagenUrl { get; set; }
 
         // Clave Foránea

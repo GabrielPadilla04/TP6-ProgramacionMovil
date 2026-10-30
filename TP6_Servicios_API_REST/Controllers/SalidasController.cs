@@ -20,28 +20,30 @@ public class SalidasController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = $"{Roles.Administrador},{Roles.Cliente}")]// Restringido únicamente a Administradores
+    [Authorize(Roles = $"{Roles.Administrador},{Roles.Cliente},{Roles.Usuario}")]// Restringido únicamente a Administradores
     public async Task<IActionResult> RegistrarSalida([FromBody] RegistrarSalidaDto dto)
     {
         if (dto.Detalles == null || !dto.Detalles.Any())
             return BadRequest("Debe incluir al menos un producto en la venta.");
 
+        // 1. Obtener y validar el ID del usuario desde los Claims del Token
+        var usuarioIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                             ?? User.FindFirst("sub")?.Value
+                             ?? User.FindFirst("id")?.Value;
+
+        if (string.IsNullOrEmpty(usuarioIdClaim) || !int.TryParse(usuarioIdClaim, out int usuarioId))
+        {
+            return Unauthorized("Token no válido o identificador de usuario ausente.");
+        }
+
+        // 2. Iniciar la transacción para operaciones atómicas
         using var transaction = await _context.Database.BeginTransactionAsync();
 
         try
         {
-            var usuarioIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                                 ?? User.FindFirst("sub")?.Value;
-
-            if (string.IsNullOrEmpty(usuarioIdClaim))
-                return Unauthorized("Token no válido.");
-
-            int usuarioId = int.Parse(usuarioIdClaim);
-
             var salida = new Salida
             {
-                ClienteId = dto.ClienteId,
-                UsuarioId = usuarioId,
+                ClienteId = usuarioId,
                 Fecha = DateTime.UtcNow,
                 Total = 0,
                 Detalles = new List<SalidaDetalle>()
@@ -65,27 +67,35 @@ public class SalidasController : ControllerBase
                     return BadRequest($"Stock insuficiente para '{producto.Nombre}'. Disponible: {producto.Stock}, Solicitado: {item.Cantidad}.");
                 }
 
-                // Descontamos stock
+                // Descuento de stock
                 producto.Stock -= item.Cantidad;
 
-                var subtotal = item.Cantidad * item.PrecioVenta;
+                // Se toma el precio oficial del producto directamente desde la base de datos
+                var subtotal = item.Cantidad * producto.Precio;
                 totalSalida += subtotal;
 
                 salida.Detalles.Add(new SalidaDetalle
                 {
                     ProductoId = item.ProductoId,
                     Cantidad = item.Cantidad,
-                    PrecioVenta = item.PrecioVenta
+                    PrecioVenta = producto.Precio
                 });
             }
 
             salida.Total = totalSalida;
 
             _context.Salidas.Add(salida);
+
+            // Guarda tanto la salida como la actualización del stock en Productos
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
 
-            return Ok(new { mensaje = "Venta registrada y stock descontado con éxito.", salidaId = salida.Id, total = salida.Total });
+            return Ok(new
+            {
+                mensaje = "Venta registrada y stock descontado con éxito.",
+                salidaId = salida.Id,
+                total = salida.Total
+            });
         }
         catch (Exception ex)
         {

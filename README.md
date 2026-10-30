@@ -67,7 +67,7 @@ Asegurate de que la cadena de conexión apunte correctamente a tu servidor local
 ### Paso 3: Aplicar las Migraciones (Entity Framework Core)
 Para crear automáticamente todas las tablas normalizadas (hasta la 3FN) en tu base de datos, ubicate en la terminal dentro de la carpeta del proyecto backend.
 ```bash
-cd Proyecto_API
+cd TP6_SERVICIOS_API_REST
 dotnet ef database update
 ```
 
@@ -81,7 +81,7 @@ La terminal indicará en qué puertos está corriendo para que el frontend pueda
 ### Paso 5: Ejecutar el Frontend Móvil (Blazor Hybrid)
 Abrí otra pestaña o ventana de la terminal, navegá hasta la carpeta del proyecto MAUI Blazor e inícialo seleccionando el emulador o dispositivo Android:
 ```bash
-cd ../Proyecto_MAUI
+cd TP6_FrontEnd
 dotnet build -t:Run -f net10.0-android
 ```
 

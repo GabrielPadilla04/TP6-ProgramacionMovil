@@ -1,0 +1,260 @@
+﻿@page "/admin/salidas"
+@using TP6_Shared.DTOs.Salida.Response
+@using TP6_FrontEnd.Services
+@inject ISalidaService SalidaService
+@inject IAuthService AuthService
+@inject NavigationManager NavManager
+
+<div class="container-fluid py-4 px-3 px-md-4 bg-light min-vh-100">
+    <!-- Encabezado -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+        <div>
+            <h2 class="fw-bold mb-1 text-dark">Historial de Salidas y Ventas</h2>
+            <p class="text-secondary mb-0">Control de operaciones cerradas, auditoría de stock y comprobantes.</p>
+        </div>
+        <button class="btn btn-dark px-3 py-2 shadow-sm d-flex align-items-center gap-2" @onclick="GenerarReportePdf">
+            <i class="bi bi-file-earmark-pdf text-danger fs-5"></i>
+            <span>Exportar Balance PDF</span>
+        </button>
+    </div>
+
+    <!-- Indicadores Rápidos -->
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-md-4">
+            <div class="card border-0 shadow-sm rounded-3 p-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="p-3 bg-primary bg-opacity-10 text-primary rounded-3 fs-4">
+                        <i class="bi bi-cash-stack"></i>
+                    </div>
+                    <div>
+                        <span class="text-secondary small fw-medium">Recaudación Total</span>
+                        <h4 class="fw-bold mb-0 text-dark">$@totalRecaudado.ToString("N2")</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-4">
+            <div class="card border-0 shadow-sm rounded-3 p-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="p-3 bg-success bg-opacity-10 text-success rounded-3 fs-4">
+                        <i class="bi bi-receipt"></i>
+                    </div>
+                    <div>
+                        <span class="text-secondary small fw-medium">Operaciones Concluidas</span>
+                        <h4 class="fw-bold mb-0 text-dark">@salidasOriginales.Count</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-4">
+            <div class="card border-0 shadow-sm rounded-3 p-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="p-3 bg-warning bg-opacity-10 text-warning rounded-3 fs-4">
+                        <i class="bi bi-box-seam"></i>
+                    </div>
+                    <div>
+                        <span class="text-secondary small fw-medium">Unidades Vendidas</span>
+                        <h4 class="fw-bold mb-0 text-dark">@totalUnidadesVendidas</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Buscador -->
+    <div class="card border-0 shadow-sm rounded-3 p-3 mb-4">
+        <div class="position-relative">
+            <input type="text"
+                   class="form-control"
+                   placeholder="Buscar por ID de operación, cliente o email..."
+                   @bind="filtroTexto"
+                   @bind:event="oninput"
+                   @onkeyup="FiltrarSalidas" />
+        </div>
+    </div>
+
+    <!-- Tabla o Estados -->
+    @if (cargando)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-2 text-secondary">Cargando operaciones...</p>
+        </div>
+    }
+    else if (salidasMostradas == null || !salidasMostradas.Any())
+    {
+        <div class="card border-0 shadow-sm rounded-3 text-center py-5">
+            <i class="bi bi-inbox fs-1 text-secondary opacity-50 mb-2"></i>
+            <h5 class="fw-bold text-dark">Sin registros de ventas</h5>
+            <p class="text-secondary mb-0">No se encontraron operaciones registradas.</p>
+        </div>
+    }
+    else
+    {
+        <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="py-3 px-3">Nº Ticket</th>
+                            <th class="py-3">Fecha y Hora</th>
+                            <th class="py-3">Cliente</th>
+                            <th class="py-3 text-center">Artículos</th>
+                            <th class="py-3 text-end">Monto Total</th>
+                            <th class="py-3 text-center px-3">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var salida in salidasMostradas)
+                        {
+                            <tr>
+                                <td class="fw-bold text-dark px-3">#@salida.Id</td>
+                                <td class="text-secondary">@salida.Fecha.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>
+                                    <div class="fw-medium text-dark">@(salida.ClienteNombre ?? "Consumidor Final")</div>
+                                    <div class="text-secondary small">@(salida.ClienteEmail ?? "-")</div>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-light text-dark border">
+                                        @salida.CantidadItems un.
+                                    </span>
+                                </td>
+                                <td class="text-end fw-bold text-dark">
+                                    $@salida.Total.ToString("N2")
+                                </td>
+                                <td class="text-center px-3">
+                                    <button class="btn btn-sm btn-outline-primary" @onclick="() => VerDetalles(salida)">
+                                        <i class="bi bi-eye me-1"></i> Desglose
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Modal Detalle de Venta -->
+@if (salidaSeleccionada != null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header">
+                    <div>
+                        <h5 class="modal-title fw-bold">Operación #@salidaSeleccionada.Id</h5>
+                        <small class="text-muted">@salidaSeleccionada.Fecha.ToLocalTime().ToString("g")</small>
+                    </div>
+                    <button type="button" class="btn-close" @onclick="CerrarModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Producto</th>
+                                    <th class="text-center">Cant.</th>
+                                    <th class="text-end">Precio</th>
+                                    <th class="text-end">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var det in salidaSeleccionada.Detalles)
+                                {
+                                    <tr>
+                                        <td>@det.ProductoNombre</td>
+                                        <td class="text-center">@det.Cantidad</td>
+                                        <td class="text-end">$@det.PrecioVenta.ToString("N2")</td>
+                                        <td class="text-end fw-bold">$@det.Subtotal.ToString("N2")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center pt-3 border-top mt-3">
+                        <span class="fw-bold">Total facturado:</span>
+                        <span class="fs-5 fw-bold text-success">$@salidaSeleccionada.Total.ToString("N2")</span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary w-100" @onclick="CerrarModal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<SalidaListadoResponse> salidasOriginales = new();
+    private List<SalidaListadoResponse> salidasMostradas = new();
+    private SalidaListadoResponse? salidaSeleccionada;
+
+    private decimal totalRecaudado;
+    private int totalUnidadesVendidas;
+    private string filtroTexto = "";
+    private bool cargando = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var autenticado = await AuthService.EstaAutenticadoAsync();
+        if (!autenticado)
+        {
+            NavManager.NavigateTo("/login");
+            return;
+        }
+
+        await CargarSalidas();
+    }
+
+    private async Task CargarSalidas()
+    {
+        cargando = true;
+        try
+        {
+            salidasOriginales = await SalidaService.ObtenerTodasAsync();
+            totalRecaudado = salidasOriginales.Sum(s => s.Total);
+            totalUnidadesVendidas = salidasOriginales.Sum(s => s.CantidadItems);
+            FiltrarSalidas();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cargar salidas: {ex.Message}");
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private void FiltrarSalidas()
+    {
+        if (string.IsNullOrWhiteSpace(filtroTexto))
+        {
+            salidasMostradas = salidasOriginales;
+            return;
+        }
+
+        salidasMostradas = salidasOriginales.Where(s =>
+            s.Id.ToString().Contains(filtroTexto) ||
+            (!string.IsNullOrEmpty(s.ClienteNombre) && s.ClienteNombre.Contains(filtroTexto, StringComparison.OrdinalIgnoreCase)) ||
+            (!string.IsNullOrEmpty(s.ClienteEmail) && s.ClienteEmail.Contains(filtroTexto, StringComparison.OrdinalIgnoreCase))
+        ).ToList();
+    }
+
+    private void VerDetalles(SalidaListadoResponse salida)
+    {
+        salidaSeleccionada = salida;
+    }
+
+    private void CerrarModal()
+    {
+        salidaSeleccionada = null;
+    }
+
+    private void GenerarReportePdf()
+    {
+        NavManager.NavigateTo("api/reportes/ventas/pdf", forceLoad: true);
+    }
+}

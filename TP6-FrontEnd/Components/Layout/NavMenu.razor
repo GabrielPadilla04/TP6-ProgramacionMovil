@@ -1,150 +1,238 @@
 ﻿@using TP6_FrontEnd.Services
+@using Microsoft.AspNetCore.Components
 @inject IAuthService AuthService
 @inject ICarritoService CarritoService
 @inject NavigationManager NavManager
-@implements IDisposable
 
-<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">TP6 FrontEnd</a>
-        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
-            <span class="navbar-toggler-icon"></span>
+<style>
+    /* VARIABLES Y CONTENEDOR PRINCIPAL */
+    .sidebar-premium {
+        background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+        min-height: 100vh;
+        color: #94a3b8;
+        font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+        box-shadow: 4px 0 24px rgba(0,0,0,0.1);
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* ENCABEZADO / LOGO */
+    .sidebar-header {
+        padding: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .brand-container {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        text-decoration: none;
+    }
+
+    .brand-icon {
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+        color: white;
+        padding: 8px;
+        border-radius: 10px;
+        font-size: 1.2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+
+    .brand-text {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #f8fafc;
+        letter-spacing: -0.5px;
+        margin: 0;
+    }
+
+    /* BOTÓN HAMBURGUESA (MÓVIL) */
+    .mobile-toggle {
+        background: transparent;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: #f8fafc;
+        border-radius: 8px;
+        padding: 4px 10px;
+        display: none;
+        transition: all 0.2s;
+    }
+
+        .mobile-toggle:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+    @@media (max-width: 767.98px) {
+        .mobile-toggle {
+            display: block;
+        }
+    }
+
+    /* NAVEGACIÓN Y LINKS */
+    .sidebar-nav {
+        padding: 24px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        overflow-y: auto;
+    }
+
+    .nav-section {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: #64748b;
+        font-weight: 700;
+        margin: 16px 0 8px 12px;
+    }
+
+    .nav-link-modern {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 12px 16px;
+        border-radius: 12px;
+        color: #cbd5e1;
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 0.95rem;
+        transition: all 0.2s ease;
+    }
+
+        .nav-link-modern i {
+            font-size: 1.15rem;
+            transition: transform 0.2s ease;
+        }
+
+        /* EFECTOS HOVER Y ACTIVO */
+        .nav-link-modern:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: #f8fafc;
+        }
+
+            .nav-link-modern:hover i {
+                transform: scale(1.15);
+                color: #818cf8;
+            }
+
+        .nav-link-modern.active {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(79, 70, 229, 0.25) 100%);
+            color: #818cf8;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+            .nav-link-modern.active i {
+                color: #818cf8;
+            }
+</style>
+
+<div class="sidebar-premium">
+    <!-- CABECERA -->
+    <div class="sidebar-header">
+        <a href="" class="brand-container">
+            <div class="brand-icon">
+                <i class="bi bi-layers-half"></i>
+            </div>
+            <span class="brand-text">Sistema ERP</span>
+        </a>
+        <button class="mobile-toggle" title="Alternar menú" @onclick="ToggleNavMenu">
+            <i class="bi bi-list fs-4"></i>
         </button>
     </div>
-</div>
 
-<div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
-    <nav class="flex-column">
-        <!-- Inicio -->
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Inicio
+    <!-- MENÚ COLAPSABLE -->
+    <div class="@NavMenuCssClass" @onclick="ToggleNavMenu">
+        <nav class="sidebar-nav">
+
+            <div class="nav-section">Principal</div>
+
+            <NavLink class="nav-link-modern" href="catalogo">
+                <i class="bi bi-shop"></i>
+                <span>Catálogo de Ventas</span>
             </NavLink>
-        </div>
 
-        <!-- Catálogo de Productos -->
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="catalogo">
-                <span class="bi bi-grid-fill-nav-menu" aria-hidden="true"></span> Catálogo
-            </NavLink>
-        </div>
-
-        <!-- Carrito de Compras con badge dinámico -->
-        <div class="nav-item px-3">
-            <NavLink class="nav-link d-flex align-items-center justify-content-between" href="carrito">
-                <span>
-                    <span class="bi bi-cart-fill-nav-menu" aria-hidden="true"></span> Carrito
-                </span>
-                @if (cantidadItemsCarrito > 0)
+            <NavLink class="nav-link-modern d-flex justify-content-between align-items-center" href="carrito">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-cart3"></i>
+                    <span>Mi Carrito</span>
+                </div>
+                @if (CarritoService.ObtenerCantidadTotalItems() > 0)
                 {
-                    <span class="badge bg-danger rounded-pill">@cantidadItemsCarrito</span>
+                    <span class="badge bg-primary rounded-pill px-2 py-1">
+                        @CarritoService.ObtenerCantidadTotalItems()
+                    </span>
                 }
             </NavLink>
-        </div>
 
-        @if (estaAutenticado && rolUsuario == "Administrador")
-        {
-            <div class="nav-item px-3">
-                <NavLink class="nav-link" href="admin/productos">
-                    <span class="bi bi-gear-fill-nav-menu" aria-hidden="true"></span> Panel Admin
+            <!-- ENLACES PARA ADMINISTRADORES Y PROVEEDORES -->
+            @if (rolUsuario == "Administrador" || rolUsuario == "Proveedor")
+            {
+                <div class="nav-section">@(rolUsuario == "Proveedor" ? "Mi Negocio" : "Gestión & Stock")</div>
+
+                <NavLink class="nav-link-modern" href="admin/productos" Match="NavLinkMatch.All">
+                    <i class="bi bi-box-seam"></i>
+                    <span>@(rolUsuario == "Proveedor" ? "Mis Productos" : "Productos e Inventario")</span>
                 </NavLink>
-            </div>
-        }
+            }
 
-        <hr class="text-white-50 mx-3 my-2" />
-
-        <!-- Sección de Autenticación / Sesión -->
-        @if (!estaAutenticado)
-        {
-            <div class="nav-item px-3">
-                <NavLink class="nav-link" href="login">
-                    <span class="bi bi-box-arrow-in-right-nav-menu" aria-hidden="true"></span> Iniciar Sesión
+            <!-- ENLACES SOLO PARA ADMINISTRADORES -->
+            @if (rolUsuario == "Administrador")
+            {
+                <NavLink class="nav-link-modern" href="admin/salidas">
+                    <i class="bi bi-cart-check"></i>
+                    <span>Salidas / Ventas</span>
                 </NavLink>
-            </div>
-        }
-        else
-        {
-            <div class="nav-item px-3">
-                <div class="text-white-50 small px-3 py-1">
-                    Sesión: <strong class="text-white">@rolUsuario</strong>
-                </div>
-            </div>
-            <div class="nav-item px-3">
-                <button class="nav-link btn btn-link text-start w-100" @onclick="CerrarSesion">
-                    <span class="bi bi-box-arrow-left-nav-menu" aria-hidden="true"></span> Cerrar Sesión
+
+                <div class="nav-section">Configuración</div>
+
+                <NavLink class="nav-link-modern" href="admin/usuarios">
+                    <i class="bi bi-people"></i>
+                    <span>Usuarios y Roles</span>
+                </NavLink>
+            }
+
+            <div class="nav-item px-3 mt-auto mb-3 border-top pt-3">
+                <button class="nav-link-modern btn btn-link text-danger w-100 text-start text-decoration-none d-flex align-items-center" @onclick="CerrarSesion">
+                    <i class="bi bi-box-arrow-left me-2"></i>
+                    <span class="fw-medium">Cerrar Sesión</span>
                 </button>
             </div>
-        }
-    </nav>
+
+        </nav>
+    </div>
 </div>
 
 @code {
     private bool collapseNavMenu = true;
-    private bool estaAutenticado = false;
-    private string? rolUsuario;
-    private int cantidadItemsCarrito = 0;
 
-    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+    private string? NavMenuCssClass => collapseNavMenu ? "collapse d-md-block" : null;
 
     private void ToggleNavMenu()
     {
         collapseNavMenu = !collapseNavMenu;
     }
 
+    private string? rolUsuario;
+
     protected override async Task OnInitializedAsync()
     {
-        await ActualizarEstadoAuth();
-        ActualizarContadorCarrito();
-
-        // Escucha cambios del carrito en memoria para redibujar el badge
-        CarritoService.OnCarritoCambiado += ManejarCambioCarrito;
-
-        // Escucha cambios de URL para refrescar la barra cuando cambia de página
-        NavManager.LocationChanged += ManejarCambioUbicacion;
+        rolUsuario = await AuthService.ObtenerRolAsync();
+        CarritoService.OnChange += StateHasChanged;
     }
 
-    private async Task ActualizarEstadoAuth()
+    public void Dispose()
     {
-        estaAutenticado = await AuthService.EstaAutenticadoAsync();
-        if (estaAutenticado)
-        {
-            rolUsuario = await AuthService.ObtenerRolAsync();
-        }
-        else
-        {
-            rolUsuario = null;
-        }
-    }
-
-    private void ActualizarContadorCarrito()
-    {
-        cantidadItemsCarrito = CarritoService.ObtenerItems().Sum(i => i.Cantidad);
-    }
-
-    private void ManejarCambioCarrito()
-    {
-        ActualizarContadorCarrito();
-        InvokeAsync(StateHasChanged);
-    }
-
-    private async void ManejarCambioUbicacion(object? sender, LocationChangedEventArgs e)
-    {
-        await ActualizarEstadoAuth();
-        ActualizarContadorCarrito();
-        await InvokeAsync(StateHasChanged);
+        CarritoService.OnChange -= StateHasChanged;
     }
 
     private async Task CerrarSesion()
     {
         await AuthService.LogoutAsync();
-        estaAutenticado = false;
-        rolUsuario = null;
-        NavManager.NavigateTo("/login");
-    }
-
-    public void Dispose()
-    {
-        CarritoService.OnCarritoCambiado -= ManejarCambioCarrito;
-        NavManager.LocationChanged -= ManejarCambioUbicacion;
+        NavManager.NavigateTo("/login", forceLoad: true);
     }
 }

@@ -14,14 +14,14 @@ namespace TP6_FrontEnd.Services
             _httpClient = httpClient;
         }
 
-        
-
-        public async Task<List<ProductoListadoResponse>> ObtenerTodosAsync(int page = 1, int pageSize = 10)
+        // Se agrega el parámetro soloMios (por defecto false)
+        public async Task<List<ProductoListadoResponse>> ObtenerTodosAsync(int page = 1, int pageSize = 10, bool soloMios = false)
         {
             try
             {
+                // Se envía el parámetro en la URL
                 var response = await _httpClient.GetFromJsonAsync<List<ProductoListadoResponse>>(
-                    $"api/productos?page={page}&pageSize={pageSize}");
+                    $"api/productos?page={page}&pageSize={pageSize}&soloMios={soloMios}");
 
                 return response ?? new List<ProductoListadoResponse>();
             }

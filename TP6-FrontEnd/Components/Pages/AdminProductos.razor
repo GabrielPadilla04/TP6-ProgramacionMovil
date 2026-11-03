@@ -1,174 +1,480 @@
 ﻿@page "/admin/productos"
+@using TP6_Shared.DTOs
 @using TP6_Shared.DTOs.Producto.Request
 @using TP6_Shared.DTOs.Producto.Response
+@using TP6_Shared.DTOs.Categoria.Response
 @using TP6_FrontEnd.Services
+@using System.IO
 @inject IProductoService ProductoService
+@inject ICategoriaService CategoriaService
 @inject IAuthService AuthService
 @inject NavigationManager NavManager
 @inject HttpClient Http
 @inject IJSRuntime JS
 
-<div class="container mt-4 mb-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+<style>
+    /* PALETA Y ESTILOS MODERNOS (SAAS/DASHBOARD PREMIUM) */
+    .admin-dashboard {
+        background-color: #f8fafc;
+        min-height: 100vh;
+        font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+    }
+
+    .text-indigo {
+        color: #4f46e5;
+    }
+
+    .bg-indigo {
+        background-color: #4f46e5;
+    }
+
+    .text-slate {
+        color: #64748b;
+    }
+
+    /* Botones Premium */
+    .btn-gradient-primary {
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-weight: 500;
+        padding: 10px 24px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.2);
+    }
+
+        .btn-gradient-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.4);
+            color: white;
+        }
+
+    .btn-glass-danger {
+        background: rgba(239, 68, 68, 0.1);
+        color: #dc2626;
+        border: 1px solid rgba(239, 68, 68, 0.2);
+        border-radius: 10px;
+        font-weight: 500;
+        padding: 10px 20px;
+        transition: all 0.2s ease;
+    }
+
+        .btn-glass-danger:hover {
+            background: #dc2626;
+            color: white;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+
+    /* Tarjetas de Métricas */
+    .kpi-card {
+        background: white;
+        border-radius: 16px;
+        border: 1px solid rgba(226, 232, 240, 0.8);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+        transition: transform 0.3s ease;
+    }
+
+        .kpi-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        }
+
+    .kpi-icon-box {
+        width: 56px;
+        height: 56px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+    }
+
+    /* Tabla Flotante Moderna */
+    .modern-table {
+        border-collapse: separate;
+        border-spacing: 0 12px;
+        width: 100%;
+    }
+
+        .modern-table thead th {
+            border: none;
+            color: #94a3b8;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+            padding: 0 20px 10px 20px;
+        }
+
+        .modern-table tbody tr {
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+            transition: all 0.2s ease;
+        }
+
+            .modern-table tbody tr:hover {
+                transform: scale(1.005);
+                box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+            }
+
+        .modern-table td {
+            padding: 16px 20px;
+            border: none;
+            vertical-align: middle;
+            border-top: 1px solid rgba(226, 232, 240, 0.4);
+            border-bottom: 1px solid rgba(226, 232, 240, 0.4);
+        }
+
+            .modern-table td:first-child {
+                border-top-left-radius: 12px;
+                border-bottom-left-radius: 12px;
+                border-left: 1px solid rgba(226, 232, 240, 0.4);
+            }
+
+            .modern-table td:last-child {
+                border-top-right-radius: 12px;
+                border-bottom-right-radius: 12px;
+                border-right: 1px solid rgba(226, 232, 240, 0.4);
+            }
+
+    /* Badges Suaves */
+    .badge-soft {
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.75rem;
+        letter-spacing: 0.3px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+        .badge-soft.success {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+
+        .badge-soft.warning {
+            background-color: #fef9c3;
+            color: #854d0e;
+        }
+
+        .badge-soft.danger {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+    /* Modal Premium */
+    .premium-modal .modal-content {
+        border-radius: 20px;
+        border: none;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+
+    .premium-modal .modal-header {
+        border-bottom: 1px solid #f1f5f9;
+        padding: 24px;
+    }
+
+    .premium-modal .modal-body {
+        padding: 32px 24px;
+    }
+
+    .premium-modal .modal-footer {
+        border-top: 1px solid #f1f5f9;
+        padding: 20px 24px;
+        background: #f8fafc;
+        border-bottom-left-radius: 20px;
+        border-bottom-right-radius: 20px;
+    }
+
+    .form-control-modern {
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+        padding: 10px 16px;
+        transition: all 0.2s;
+        background: #f8fafc;
+    }
+
+        .form-control-modern:focus {
+            background: white;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        }
+</style>
+
+<div class="admin-dashboard py-4 px-3 px-md-5">
+    <!-- Encabezado Principal y Acciones -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-5">
         <div>
-            <h2>Gestión de Productos</h2>
-            <p class="text-muted mb-0">Panel exclusivo de administración</p>
+            <h1 class="fw-bolder mb-1 text-dark" style="letter-spacing: -0.5px; font-size: 2rem;">
+                @(rolActual == "Proveedor" ? "Mis Productos" : "Inventario")
+            </h1>
+            <p class="text-slate mb-0">Gestioná tus artículos, stock y precios.</p>
         </div>
-        <div class="d-flex gap-2">
-            <button class="btn btn-outline-danger" @onclick="DescargarReportePdf" disabled="@descargandoReporte">
-                @if (descargandoReporte)
-                {
-                    <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                    <span>Generando PDF...</span>
-                }
-                else
-                {
-                    <span class="bi bi-file-earmark-pdf me-1"></span>
-                    <span>Descargar Reporte PDF</span>
-                }
-            </button>
-            <button class="btn btn-primary" @onclick="AbrirModalCrear">
-                <span class="bi bi-plus-lg me-1"></span> Nuevo Producto
+        <div class="d-flex flex-wrap gap-3">
+            @if (rolActual == "Administrador")
+            {
+                <button class="btn-glass-danger d-inline-flex align-items-center" @onclick="DescargarReportePdf" disabled="@descargandoReporte">
+                    @if (descargandoReporte)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        <span>Generando...</span>
+                    }
+                    else
+                    {
+                        <i class="bi bi-filetype-pdf me-2 fs-5"></i>
+                        <span>Exportar PDF</span>
+                    }
+                </button>
+            }
+            <button class="btn-gradient-primary d-inline-flex align-items-center" @onclick="AbrirModalCrear">
+                <i class="bi bi-plus-lg me-2"></i>
+                <span>Nuevo Producto</span>
             </button>
         </div>
     </div>
 
+    <!-- Alertas de estado -->
     @if (!string.IsNullOrWhiteSpace(mensajeAlerta))
     {
-        <div class="alert @claseAlerta alert-dismissible fade show" role="alert">
-            @mensajeAlerta
-            <button type="button" class="btn-close" @onclick="() => mensajeAlerta = null"></button>
+        <div class="alert @claseAlerta alert-dismissible fade show rounded-4 border-0 shadow-sm d-flex align-items-center mb-4" role="alert">
+            <i class="bi @(claseAlerta.Contains("success") ? "bi-check-circle-fill text-success" : "bi-exclamation-triangle-fill text-danger") fs-4 me-3"></i>
+            <div class="fw-medium">@mensajeAlerta</div>
+            <button type="button" class="btn-close ms-auto" @onclick="() => mensajeAlerta = null"></button>
         </div>
     }
 
+    <!-- Tarjetas de Métricas Rápidas (KPIs) -->
+    @if (!cargando && productos.Any())
+    {
+        <div class="row g-4 mb-5">
+            <div class="col-12 col-md-4">
+                <div class="kpi-card h-100 p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="kpi-icon-box bg-indigo bg-opacity-10 text-indigo me-4">
+                            <i class="bi bi-boxes"></i>
+                        </div>
+                        <div>
+                            <span class="text-slate small fw-bold text-uppercase" style="letter-spacing: 1px;">Total Catálogo</span>
+                            <h2 class="fw-bolder text-dark mb-0 mt-1">@productos.Count</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-md-4">
+                <div class="kpi-card h-100 p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="kpi-icon-box bg-danger bg-opacity-10 text-danger me-4">
+                            <i class="bi bi-exclamation-octagon"></i>
+                        </div>
+                        <div>
+                            <span class="text-slate small fw-bold text-uppercase" style="letter-spacing: 1px;">Sin Stock</span>
+                            <h2 class="fw-bolder text-danger mb-0 mt-1">@productos.Count(p => p.Stock <= 0)</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-md-4">
+                <div class="kpi-card h-100 p-4">
+                    <div class="d-flex align-items-center">
+                        <div class="kpi-icon-box bg-warning bg-opacity-10 text-warning me-4">
+                            <i class="bi bi-graph-down-arrow"></i>
+                        </div>
+                        <div>
+                            <span class="text-slate small fw-bold text-uppercase" style="letter-spacing: 1px;">Stock Crítico</span>
+                            <h2 class="fw-bolder text-warning mb-0 mt-1">@productos.Count(p => p.Stock > 0 && p.Stock <= 5)</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Buscador -->
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <h4 class="fw-bold text-dark mb-0">Listado de Artículos</h4>
+        <div class="position-relative" style="max-width: 350px; width: 100%;">
+            <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-slate"></i>
+            <input type="text" class="form-control form-control-modern ps-5" placeholder="Buscar producto..." @bind="terminoBusqueda" @bind:event="oninput" />
+        </div>
+    </div>
+
+    <!-- Tabla -->
     @if (cargando)
     {
         <div class="text-center py-5">
-            <div class="spinner-border text-primary" role="status"></div>
-            <p class="mt-2 text-muted">Cargando productos...</p>
+            <div class="spinner-grow text-indigo" style="width: 3rem; height: 3rem;" role="status"></div>
+            <p class="mt-3 fw-medium text-slate">Cargando datos del servidor...</p>
         </div>
     }
-    else if (!productos.Any())
+    else if (!productosFiltrados.Any())
     {
-        <div class="alert alert-info text-center py-4">
-            No hay productos registrados en el sistema.
+        <div class="text-center py-5 bg-white rounded-4 border shadow-sm mt-3">
+            <div class="bg-light rounded-circle d-inline-flex p-4 mb-3">
+                <i class="bi bi-search text-slate fs-1"></i>
+            </div>
+            <h5 class="fw-bold text-dark">No se encontraron resultados</h5>
+            <p class="text-slate mb-0">Probá buscando con otro nombre o identificador.</p>
         </div>
     }
     else
     {
-        <div class="card shadow-sm border-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
+        <div class="table-responsive pb-5" style="overflow-x: visible;">
+            <table class="modern-table">
+                <thead>
+                    <tr>
+                        <th style="width: 80px;">Item</th>
+                        <th>Detalle del Producto</th>
+                        <th>Precio</th>
+                        <th>Estado de Stock</th>
+                        <th class="text-end">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var prod in productosFiltrados)
+                    {
                         <tr>
-                            <th style="width: 80px;">Imagen</th>
-                            <th>Nombre</th>
-                            <th>Precio</th>
-                            <th>Stock</th>
-                            <th class="text-end">Acciones</th>
+                            <td>
+                                <img src="@ResolverUrlImagen(prod.ImagenUrl)"
+                                     alt="@prod.Nombre"
+                                     class="rounded-3 shadow-sm object-fit-cover"
+                                     style="width: 60px; height: 60px; border: 2px solid white;" />
+                            </td>
+                            <td>
+                                <div class="fw-bold text-dark fs-6">@prod.Nombre</div>
+                                <div class="text-slate small mt-1"><i class="bi bi-upc-scan me-1"></i>ID: @prod.Id</div>
+                            </td>
+                            <td>
+                                <span class="fw-bolder text-dark fs-6">$@prod.Precio.ToString("N2")</span>
+                            </td>
+                            <td>
+                                @if (prod.Stock <= 0)
+                                {
+                                    <span class="badge-soft danger"><i class="bi bi-x-circle-fill"></i> Agotado</span>
+                                }
+                                else if (prod.Stock <= 5)
+                                {
+                                    <span class="badge-soft warning"><i class="bi bi-exclamation-triangle-fill"></i> Quedan @prod.Stock</span>
+                                }
+                                else
+                                {
+                                    <span class="badge-soft success"><i class="bi bi-check-circle-fill"></i> @prod.Stock Unidades</span>
+                                }
+                            </td>
+                            <td class="text-end">
+                                <button class="btn btn-light rounded-circle p-2 mx-1 shadow-sm border" title="Editar" @onclick="() => AbrirModalEditar(prod.Id)" style="color: #4f46e5;">
+                                    <i class="bi bi-pencil-fill"></i>
+                                </button>
+                                <button class="btn btn-light rounded-circle p-2 mx-1 shadow-sm border" title="Eliminar" @onclick="() => ConfirmarEliminacion(prod.Id, prod.Nombre)" style="color: #ef4444;">
+                                    <i class="bi bi-trash3-fill"></i>
+                                </button>
+                            </td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var prod in productos)
-                        {
-                            <tr>
-                                <td>
-                                    <img src="@(string.IsNullOrWhiteSpace(prod.ImagenUrl) ? "https://placehold.co/100x100?text=Sin+Foto" : prod.ImagenUrl)"
-                                         alt="@prod.Nombre"
-                                         class="img-thumbnail"
-                                         style="width: 60px; height: 60px; object-fit: cover;" />
-                                </td>
-                                <td>
-                                    <div class="fw-bold">@prod.Nombre</div>
-                                    <small class="text-muted">ID: @prod.Id</small>
-                                </td>
-                                <td>$@prod.Precio</td>
-                                <td>
-                                    @if (prod.Stock <= 0)
-                                    {
-                                        <span class="badge bg-danger">Agotado (0)</span>
-                                    }
-                                    else if (prod.Stock <= 5)
-                                    {
-                                        <span class="badge bg-warning text-dark">Bajo (@prod.Stock)</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-success">@prod.Stock unid.</span>
-                                    }
-                                </td>
-                                <td class="text-end">
-                                    <button class="btn btn-sm btn-outline-secondary me-2" @onclick="() => AbrirModalEditar(prod.Id)">
-                                        Editar
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmarEliminacion(prod.Id, prod.Nombre)">
-                                        Eliminar
-                                    </button>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
+                    }
+                </tbody>
+            </table>
         </div>
     }
 </div>
 
-@* Modal para Crear / Editar Producto con subida de imagen *@
+@* Modal Flotante Premium *@
 @if (mostrarModal)
 {
-    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
-        <div class="modal-dialog modal-dialog-centered">
+    <div class="modal fade show d-block premium-modal" tabindex="-1" style="background-color: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px);">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">@(esEdicion ? "Editar Producto" : "Nuevo Producto")</h5>
-                    <button type="button" class="btn-close" @onclick="CerrarModal"></button>
+                    <h4 class="modal-title fw-bolder text-dark d-flex align-items-center mb-0">
+                        <span class="bg-indigo bg-opacity-10 text-indigo p-2 rounded-3 me-3 d-inline-block">
+                            <i class="bi @(esEdicion ? "bi-pencil-square" : "bi-box-seam") fs-5"></i>
+                        </span>
+                        @(esEdicion ? "Actualizar Producto" : "Registrar Nuevo Producto")
+                    </h4>
+                    <button type="button" class="btn-close shadow-none" @onclick="CerrarModal"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Nombre</label>
-                        <input type="text" class="form-control" @bind="formNombre" />
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Descripción</label>
-                        <textarea class="form-control" rows="3" @bind="formDescripcion"></textarea>
-                    </div>
-                    <div class="row">
-                        <div class="col-6 mb-3">
-                            <label class="form-label">Precio</label>
-                            <input type="number" step="0.01" class="form-control" @bind="formPrecio" />
-                        </div>
-
-                        <!-- El campo de stock visible tanto en Alta como en Edición -->
-                        <div class="col-6 mb-3">
-                            <label class="form-label">@(esEdicion ? "Stock Actual / Reposición" : "Stock Inicial")</label>
-                            <input type="number" min="0" class="form-control" @bind="formStock" />
-                        </div>
-
-                        <div class="col-6 mb-3">
-                            <label class="form-label">ID Categoría</label>
-                            <input type="number" class="form-control" @bind="formCategoriaId" />
-                        </div>
-                    </div>
-
-                    <!-- Selector de Imagen física con vista previa -->
-                    <div class="mb-3">
-                        <label class="form-label">Imagen del Producto</label>
-                        <InputFile OnChange="ManejarSeleccionArchivo" class="form-control" accept=".jpg,.jpeg,.png,.webp" />
-                        <small class="text-muted d-block mt-1">Formatos admitidos: JPG, PNG, WEBP (Máx. 5MB)</small>
-
-                        @if (!string.IsNullOrWhiteSpace(formImagenUrl))
-                        {
-                            <div class="mt-2 text-center">
-                                <img src="@formImagenUrl" alt="Vista previa" class="img-thumbnail" style="max-height: 120px;" />
+                    <div class="row g-4">
+                        <div class="col-12 col-md-7 pe-md-4">
+                            <div class="mb-3">
+                                <label class="form-label text-slate fw-semibold small text-uppercase">Nombre del Producto</label>
+                                <input type="text" class="form-control form-control-modern" placeholder="Ej: Zapatillas Urbanas" @bind="formNombre" />
                             </div>
-                        }
+                            <div class="mb-3">
+                                <label class="form-label text-slate fw-semibold small text-uppercase">Descripción</label>
+                                <textarea class="form-control form-control-modern" rows="3" placeholder="Ingresá los detalles del producto..." @bind="formDescripcion"></textarea>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-sm-6">
+                                    <label class="form-label text-slate fw-semibold small text-uppercase">Precio de Venta ($)</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text border-end-0 bg-transparent text-slate"><i class="bi bi-currency-dollar"></i></span>
+                                        <input type="number" step="0.01" class="form-control form-control-modern border-start-0 ps-0" @bind="formPrecio" />
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="form-label text-slate fw-semibold small text-uppercase">@(esEdicion ? "Stock Total" : "Stock Inicial")</label>
+                                    <input type="number" min="0" class="form-control form-control-modern" @bind="formStock" />
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label text-slate fw-semibold small text-uppercase">Categoría</label>
+                                    <select class="form-select form-control-modern" @bind="formCategoriaId">
+                                        <option value="0" disabled>-- Seleccione una categoría --</option>
+                                        @if (categoriasDisponibles != null && categoriasDisponibles.Any())
+                                        {
+                                            @foreach (var cat in categoriasDisponibles)
+                                            {
+                                                <option value="@cat.Id">@cat.Nombre</option>
+                                            }
+                                        }
+                                    </select>
+                                    @if (formCategoriaId == 0)
+                                    {
+                                        <small class="text-danger mt-1 d-block">Debe seleccionar una categoría para continuar.</small>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Zona de Imagen -->
+                        <div class="col-12 col-md-5">
+                            <label class="form-label text-slate fw-semibold small text-uppercase w-100">Fotografía Principal</label>
+                            <div class="border rounded-4 bg-white d-flex flex-column align-items-center justify-content-center p-3 mb-3 position-relative shadow-sm" style="min-height: 220px; border: 2px dashed #e2e8f0 !important;">
+                                @if (!string.IsNullOrWhiteSpace(formPreviewImagen))
+                                {
+                                    <img src="@formPreviewImagen" alt="Vista previa" class="img-fluid rounded-3 object-fit-cover w-100 h-100 position-absolute top-0 start-0 p-1" />
+                                }
+                                else
+                                {
+                                    <div class="text-center text-slate">
+                                        <i class="bi bi-cloud-arrow-up fs-1 mb-2 text-indigo opacity-75"></i>
+                                        <p class="small fw-medium mb-0">Seleccioná una imagen</p>
+                                    </div>
+                                }
+                            </div>
+                            <div class="mt-2">
+                                <InputFile OnChange="ManejarSeleccionArchivo" class="form-control form-control-modern form-control-sm" accept=".jpg,.jpeg,.png,.webp" />
+                                <div class="text-center text-muted mt-2" style="font-size: 0.7rem;">
+                                    <i class="bi bi-info-circle me-1"></i>Formatos: JPG, PNG, WEBP (Máximo 5MB)
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn-secondary btn" @onclick="CerrarModal">Cancelar</button>
-                    <button type="button" class="btn btn-primary" @onclick="GuardarProducto" disabled="@procesandoGuardado">
-                        @(procesandoGuardado ? "Guardando..." : "Guardar")
+                <div class="modal-footer d-flex justify-content-between align-items-center">
+                    <button type="button" class="btn btn-link text-slate text-decoration-none fw-medium" @onclick="CerrarModal">Cancelar</button>
+                    <button type="button" class="btn-gradient-primary" @onclick="GuardarProducto" disabled="@procesandoGuardado">
+                        @if (procesandoGuardado)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                            <span>Procesando...</span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-check2-circle me-2"></i>
+                            <span>Confirmar Cambios</span>
+                        }
                     </button>
                 </div>
             </div>
@@ -178,11 +484,23 @@
 
 @code {
     private List<ProductoListadoResponse> productos = new();
+    private List<CategoriaResponse> categoriasDisponibles = new();
     private bool cargando = true;
     private bool procesandoGuardado = false;
     private bool descargandoReporte = false;
     private string? mensajeAlerta;
     private string claseAlerta = "alert-success";
+    private string terminoBusqueda = string.Empty;
+
+    // Rol del usuario logueado
+    private string? rolActual;
+
+    // Filtro reactivo en memoria
+    private IEnumerable<ProductoListadoResponse> productosFiltrados =>
+        string.IsNullOrWhiteSpace(terminoBusqueda)
+            ? productos
+            : productos.Where(p => (p.Nombre?.Contains(terminoBusqueda, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                                   p.Id.ToString().Contains(terminoBusqueda));
 
     // Control de modal
     private bool mostrarModal = false;
@@ -194,28 +512,47 @@
     private string formDescripcion = string.Empty;
     private decimal formPrecio = 0;
     private int formStock = 0;
-    private int formCategoriaId = 1;
-    private string? formImagenUrl;
+    private int formCategoriaId = 0;
+    private string? formPreviewImagen;
+    private string? urlImagenActual;
 
-    // Archivo en memoria para subir
+    // Archivo en memoria cacheado para no perder el stream
     private IBrowserFile? archivoSeleccionado;
+    private byte[]? bufferArchivo;
+    private string? nombreArchivoSeleccionado;
 
     protected override async Task OnInitializedAsync()
     {
-        var rol = await AuthService.ObtenerRolAsync();
-        if (rol != "Administrador")
+        rolActual = await AuthService.ObtenerRolAsync();
+
+        // Bloqueo: solo entran Admin o Proveedor
+        if (rolActual != "Administrador" && rolActual != "Proveedor")
         {
             NavManager.NavigateTo("/catalogo");
             return;
         }
 
+        await CargarCategorias();
         await CargarProductos();
+    }
+
+    private async Task CargarCategorias()
+    {
+        try
+        {
+            categoriasDisponibles = await CategoriaService.ObtenerTodasAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cargar categorías: {ex.Message}");
+        }
     }
 
     private async Task CargarProductos()
     {
         cargando = true;
-        productos = await ProductoService.ObtenerTodosAsync(page: 1, pageSize: 50);
+        // ACA LE PASAMOS soloMios: true a la API. El backend sabrá si filtrar por el ProveedorId del token
+        productos = await ProductoService.ObtenerTodosAsync(page: 1, pageSize: 50, soloMios: true);
         cargando = false;
     }
 
@@ -258,9 +595,14 @@
         formDescripcion = string.Empty;
         formPrecio = 0;
         formStock = 1;
-        formCategoriaId = 1;
-        formImagenUrl = null;
+        formCategoriaId = categoriasDisponibles.FirstOrDefault()?.Id ?? 0;
+
+        formPreviewImagen = null;
+        urlImagenActual = null;
         archivoSeleccionado = null;
+        bufferArchivo = null;
+        nombreArchivoSeleccionado = null;
+
         mostrarModal = true;
     }
 
@@ -280,8 +622,14 @@
         formPrecio = prod.Precio;
         formStock = prod.Stock;
         formCategoriaId = prod.CategoriaId;
-        formImagenUrl = prod.ImagenUrl;
+
+        urlImagenActual = prod.ImagenUrl;
+        formPreviewImagen = ResolverUrlImagen(prod.ImagenUrl);
+
         archivoSeleccionado = null;
+        bufferArchivo = null;
+        nombreArchivoSeleccionado = null;
+
         mostrarModal = true;
     }
 
@@ -293,17 +641,21 @@
     private async Task ManejarSeleccionArchivo(InputFileChangeEventArgs e)
     {
         archivoSeleccionado = e.File;
+        nombreArchivoSeleccionado = e.File.Name;
 
         try
         {
             var formato = archivoSeleccionado.ContentType;
-            var buffer = new byte[archivoSeleccionado.Size];
-            await archivoSeleccionado.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024).ReadAsync(buffer);
-            formImagenUrl = $"data:{formato};base64,{Convert.ToBase64String(buffer)}";
+            bufferArchivo = new byte[archivoSeleccionado.Size];
+            using var stream = archivoSeleccionado.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+            await stream.ReadAsync(bufferArchivo);
+
+            formPreviewImagen = $"data:{formato};base64,{Convert.ToBase64String(bufferArchivo)}";
         }
         catch (Exception ex)
         {
             MostrarMensaje($"Error al cargar vista previa: {ex.Message}", "alert-warning");
+            bufferArchivo = null;
         }
     }
 
@@ -315,87 +667,94 @@
             return;
         }
 
+        if (formCategoriaId <= 0)
+        {
+            MostrarMensaje("Debe seleccionar una categoría válida.", "alert-warning");
+            return;
+        }
+
         if (formStock < 0)
         {
-            MostrarMensaje("El stock no puede ser un número negativo.", "alert-warning");
+            MostrarMensaje("El stock no puede ser negativo.", "alert-warning");
             return;
         }
 
         procesandoGuardado = true;
         int idProductoFinal = 0;
 
-        if (esEdicion)
+        try
         {
-            var req = new ActualizarProductoRequest
+            if (esEdicion)
             {
-                Nombre = formNombre,
-                Descripcion = formDescripcion,
-                Precio = formPrecio,
-                Stock = formStock,
-                CategoriaId = formCategoriaId,
-                ImagenUrl = formImagenUrl
-            };
+                var req = new ActualizarProductoRequest
+                {
+                    Nombre = formNombre,
+                    Descripcion = formDescripcion,
+                    Precio = formPrecio,
+                    Stock = formStock,
+                    CategoriaId = formCategoriaId,
+                    ImagenUrl = urlImagenActual // No mandamos Base64, mantenemos la URL actual si existe
+                };
 
-            var exito = await ProductoService.ActualizarAsync(idProductoEditar, req);
-            if (exito)
-            {
+                var exito = await ProductoService.ActualizarAsync(idProductoEditar, req);
+                if (!exito)
+                {
+                    MostrarMensaje("Error al actualizar los datos del producto.", "alert-danger");
+                    procesandoGuardado = false;
+                    return;
+                }
                 idProductoFinal = idProductoEditar;
             }
             else
             {
-                MostrarMensaje("Error al actualizar los datos del producto.", "alert-danger");
-                procesandoGuardado = false;
-                return;
-            }
-        }
-        else
-        {
-            var req = new CrearProductoRequest
-            {
-                Nombre = formNombre,
-                Descripcion = formDescripcion,
-                Precio = formPrecio,
-                Stock = formStock,
-                CategoriaId = formCategoriaId,
-                ImagenUrl = formImagenUrl
-            };
+                var req = new CrearProductoRequest
+                {
+                    Nombre = formNombre,
+                    Descripcion = formDescripcion,
+                    Precio = formPrecio,
+                    Stock = formStock,
+                    CategoriaId = formCategoriaId,
+                    ImagenUrl = null
+                };
 
-            var nuevoProd = await ProductoService.CrearAsync(req);
-            if (nuevoProd != null)
-            {
+                var nuevoProd = await ProductoService.CrearAsync(req);
+                if (nuevoProd == null)
+                {
+                    MostrarMensaje("Error al crear el producto.", "alert-danger");
+                    procesandoGuardado = false;
+                    return;
+                }
                 idProductoFinal = nuevoProd.Id;
             }
-            else
-            {
-                MostrarMensaje("Error al crear el producto.", "alert-danger");
-                procesandoGuardado = false;
-                return;
-            }
-        }
 
-        if (archivoSeleccionado != null && idProductoFinal > 0)
-        {
-            try
+            // Subir imagen física si seleccionó una
+            if (bufferArchivo != null && idProductoFinal > 0)
             {
-                using var stream = archivoSeleccionado.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
-                var resultadoImagen = await ProductoService.SubirImagenAsync(idProductoFinal, stream, archivoSeleccionado.Name);
+                using var memoryStream = new MemoryStream(bufferArchivo);
+                var resultadoImagen = await ProductoService.SubirImagenAsync(idProductoFinal, memoryStream, nombreArchivoSeleccionado ?? "foto.jpg");
 
                 if (resultadoImagen == null)
                 {
-                    MostrarMensaje("Producto guardado, pero ocurrió un problema al subir la imagen.", "alert-warning");
+                    MostrarMensaje("Producto guardado, pero ocurrió un problema al subir la imagen física.", "alert-warning");
+                    CerrarModal();
+                    await CargarProductos();
+                    procesandoGuardado = false;
+                    return;
                 }
             }
-            catch (Exception ex)
-            {
-                MostrarMensaje($"Producto guardado, pero falló la transferencia de imagen: {ex.Message}", "alert-warning");
-            }
+
+            MostrarMensaje(esEdicion ? "Producto actualizado exitosamente." : "Producto creado exitosamente.", "alert-success");
+            CerrarModal();
+            await CargarProductos();
         }
-
-        MostrarMensaje(esEdicion ? "Producto y stock actualizados exitosamente." : "Producto creado exitosamente.", "alert-success");
-        CerrarModal();
-        await CargarProductos();
-
-        procesandoGuardado = false;
+        catch (Exception ex)
+        {
+            MostrarMensaje($"Ocurrió un error al guardar: {ex.Message}", "alert-danger");
+        }
+        finally
+        {
+            procesandoGuardado = false;
+        }
     }
 
     private async Task ConfirmarEliminacion(int id, string nombre)
@@ -416,5 +775,32 @@
     {
         mensajeAlerta = mensaje;
         claseAlerta = clase;
+    }
+
+    // Usamos el resolver para concatenar la base de la API si la imagen tiene ruta relativa
+    private string ResolverUrlImagen(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url)) return "https://placehold.co/150x150?text=No+Photo";
+
+        if (url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+                    url.StartsWith("https://", StringComparison.OrdinalIgnoreCase) ||
+                    url.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
+        {
+            return url;
+        }
+
+        var baseAddress = Http.BaseAddress?.ToString().TrimEnd('/') ?? "";
+        return $"{baseAddress}/{url.TrimStart('/')}";
+    }
+
+    [SupplyParameterFromQuery(Name = "accion")]
+    public string? AccionUrl { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if (string.Equals(AccionUrl, "nuevo", StringComparison.OrdinalIgnoreCase))
+        {
+            AbrirModalCrear();
+        }
     }
 }

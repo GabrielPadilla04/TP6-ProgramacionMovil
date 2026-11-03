@@ -18,6 +18,10 @@ namespace TP6_Servicios_API_REST.Models
         [EmailAddress, MaxLength(100)]
         public string? Email { get; set; }
 
+        // Relación con el Proveedor / Usuario que lo dio de alta
+        public int? UsuarioId { get; set; }
+        public Usuario? Usuario { get; set; }
+
         // Relación con Ingresos
         public ICollection<Ingreso> Ingresos { get; set; } = new List<Ingreso>();
     }

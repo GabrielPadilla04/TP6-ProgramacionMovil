@@ -36,7 +36,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
         };
     });
-
 builder.Services.AddAuthorization();
 
 // 3. CORS
@@ -57,7 +56,6 @@ builder.Services.AddScoped<ProductoService>();
 builder.Services.AddScoped<ProveedorService>();
 builder.Services.AddScoped<UsuarioService>();
 builder.Services.AddScoped<ImagenService>();
-
 // 5. Controladores y OpenAPI NATIVO de .NET
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
@@ -91,6 +89,8 @@ using (var scope = app.Services.CreateScope())
 }
 
 // 7. Pipeline HTTP
+
+app.UseStaticFiles();
 app.UseMiddleware<AuditoriaMiddleware>();
 
 app.MapOpenApi();

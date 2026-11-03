@@ -1,9 +1,10 @@
-﻿using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using TP6_Servicios_API_REST.Data;
-using TP6_Shared.DTOs;
 using TP6_Servicios_API_REST.Models;
+using TP6_Shared.DTOs;
 
 namespace TP6_Servicios_API_REST.Controllers;
 
@@ -102,5 +103,37 @@ public class SalidasController : ControllerBase
             await transaction.RollbackAsync();
             return StatusCode(500, $"Error interno al registrar la venta: {ex.Message}");
         }
+    }
+
+    [HttpGet]
+    [Authorize(Roles = Roles.Administrador)]
+    public async Task<IActionResult> ObtenerTodas()
+    {
+        var salidas = await _context.Salidas
+            .Include(s => s.Cliente)
+            .Include(s => s.Detalles)
+                .ThenInclude(d => d.Producto)
+            .OrderByDescending(s => s.Fecha)
+            .Select(s => new
+            {
+                s.Id,
+                s.Fecha,
+                s.Total,
+                ClienteNombre = s.Cliente.NombreCompleto,
+                ClienteEmail = s.Cliente.Email,
+                CantidadItems = s.Detalles.Sum(d => d.Cantidad),
+                Detalles = s.Detalles.Select(d => new
+                {
+                    d.Id,
+                    d.ProductoId,
+                    ProductoNombre = d.Producto.Nombre,
+                    d.Cantidad,
+                    d.PrecioVenta,
+                    Subtotal = d.Cantidad * d.PrecioVenta
+                }).ToList()
+            })
+            .ToListAsync();
+
+        return Ok(salidas);
     }
 }

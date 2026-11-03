@@ -1,0 +1,179 @@
+﻿@page "/admin/usuarios"
+@using TP6_Shared.DTOs.Usuario.Output
+@using TP6_FrontEnd.Services
+@inject IUsuarioService UsuarioService
+@inject IAuthService AuthService
+@inject NavigationManager NavManager
+
+<div class="container-fluid py-4 px-3 px-md-4 bg-light min-vh-100">
+    <!-- Encabezado -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+        <div>
+            <h2 class="fw-bold mb-1 text-dark">Gestión de Usuarios</h2>
+            <p class="text-secondary mb-0">Administración de cuentas, roles y accesos al sistema.</p>
+        </div>
+    </div>
+
+    <!-- Buscador -->
+    <div class="card border-0 shadow-sm rounded-3 p-3 mb-4">
+        <div class="position-relative">
+            <input type="text"
+                   class="form-control"
+                   placeholder="Buscar por nombre, email o rol..."
+                   @bind="filtroTexto"
+                   @bind:event="oninput"
+                   @onkeyup="FiltrarUsuarios" />
+        </div>
+    </div>
+
+    <!-- Tabla o Estados -->
+    @if (cargando)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-2 text-secondary">Cargando usuarios...</p>
+        </div>
+    }
+    else if (usuariosMostrados == null || !usuariosMostrados.Any())
+    {
+        <div class="card border-0 shadow-sm rounded-3 text-center py-5">
+            <i class="bi bi-people fs-1 text-secondary opacity-50 mb-2"></i>
+            <h5 class="fw-bold text-dark">Sin usuarios</h5>
+            <p class="text-secondary mb-0">No se encontraron registros que coincidan.</p>
+        </div>
+    }
+    else
+    {
+        <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="py-3 px-3">ID</th>
+                            <th class="py-3">Nombre Completo</th>
+                            <th class="py-3">Email</th>
+                            <th class="py-3 text-center">Rol</th>
+                            <th class="py-3 text-center px-3">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var usuario in usuariosMostrados)
+                        {
+                            <tr>
+                                <td class="fw-bold text-dark px-3">#@usuario.Id</td>
+                                <td class="fw-medium text-dark">@usuario.NombreCompleto</td>
+                                <td class="text-secondary">@usuario.Email</td>
+                                <td class="text-center">
+                                    @if (usuario.Rol == "Administrador")
+                                    {
+                                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle px-3 py-1 rounded-pill">Admin</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success bg-opacity-10 text-success border border-success-subtle px-3 py-1 rounded-pill">@usuario.Rol</span>
+                                    }
+                                </td>
+                                <td class="text-center px-3">
+                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmarEliminacion(usuario)">
+                                        <i class="bi bi-trash3 me-1"></i> Eliminar
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Modal de Confirmación para Eliminar -->
+@if (usuarioAEliminar != null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title fw-bold">Confirmar Eliminación</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CancelarEliminacion"></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <i class="bi bi-exclamation-triangle text-danger" style="font-size: 3rem;"></i>
+                    <h5 class="mt-3 fw-bold">¿Eliminar a @usuarioAEliminar.NombreCompleto?</h5>
+                    <p class="text-muted mb-0">Esta acción no se puede deshacer y borrará permanentemente su acceso al sistema.</p>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary px-4" @onclick="CancelarEliminacion">Cancelar</button>
+                    <button type="button" class="btn btn-danger px-4" @onclick="EliminarUsuario">Sí, eliminar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<UsuarioDtoOutput> usuariosOriginales = new();
+    private List<UsuarioDtoOutput> usuariosMostrados = new();
+    private UsuarioDtoOutput? usuarioAEliminar;
+
+    private string filtroTexto = "";
+    private bool cargando = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var rol = await AuthService.ObtenerRolAsync();
+        if (rol != "Administrador")
+        {
+            NavManager.NavigateTo("/");
+            return;
+        }
+
+        await CargarUsuarios();
+    }
+
+    private async Task CargarUsuarios()
+    {
+        cargando = true;
+        usuariosOriginales = await UsuarioService.ObtenerTodosAsync();
+        FiltrarUsuarios();
+        cargando = false;
+    }
+
+    private void FiltrarUsuarios()
+    {
+        if (string.IsNullOrWhiteSpace(filtroTexto))
+        {
+            usuariosMostrados = usuariosOriginales;
+            return;
+        }
+
+        usuariosMostrados = usuariosOriginales.Where(u =>
+            (!string.IsNullOrEmpty(u.NombreCompleto) && u.NombreCompleto.Contains(filtroTexto, StringComparison.OrdinalIgnoreCase)) ||
+            (!string.IsNullOrEmpty(u.Email) && u.Email.Contains(filtroTexto, StringComparison.OrdinalIgnoreCase)) ||
+            (!string.IsNullOrEmpty(u.Rol) && u.Rol.Contains(filtroTexto, StringComparison.OrdinalIgnoreCase))
+        ).ToList();
+    }
+
+    private void ConfirmarEliminacion(UsuarioDtoOutput usuario)
+    {
+        usuarioAEliminar = usuario;
+    }
+
+    private void CancelarEliminacion()
+    {
+        usuarioAEliminar = null;
+    }
+
+    private async Task EliminarUsuario()
+    {
+        if (usuarioAEliminar == null) return;
+
+        var exito = await UsuarioService.EliminarAsync(usuarioAEliminar.Id);
+        if (exito)
+        {
+            await CargarUsuarios();
+        }
+
+        usuarioAEliminar = null;
+    }
+}

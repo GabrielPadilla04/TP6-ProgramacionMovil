@@ -1,71 +1,102 @@
 ﻿@page "/carrito"
 @using TP6_Shared.DTOs
-@using TP6_FrontEnd.Models
 @using TP6_FrontEnd.Services
 @inject ICarritoService CarritoService
-@inject IVentaService VentaService
 @inject IAuthService AuthService
 @inject NavigationManager NavManager
+@inject HttpClient Http
+@implements IDisposable
 
-<div class="container mt-4 mb-5">
-    <h2 class="mb-4">Mi Carrito de Compras</h2>
+<div class="container-fluid py-4 px-3 px-md-5 bg-light min-vh-100">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1 text-dark">Mi Carrito de Compras</h2>
+            <p class="text-secondary mb-0">Revisá tus productos antes de finalizar la transacción.</p>
+        </div>
+        @if (CarritoService.Items.Any())
+        {
+            <button class="btn btn-outline-danger btn-sm rounded-3" @onclick="CarritoService.VaciarCarrito">
+                <i class="bi bi-trash3 me-1"></i> Vaciar Carrito
+            </button>
+        }
+    </div>
 
     @if (!string.IsNullOrWhiteSpace(mensajeAlerta))
     {
-        <div class="alert @claseAlerta alert-dismissible fade show" role="alert">
-            @mensajeAlerta
+        <div class="alert @claseAlerta alert-dismissible fade show rounded-3 shadow-sm mb-4" role="alert">
+            <i class="bi @(claseAlerta.Contains("success") ? "bi-check-circle-fill text-success" : "bi-exclamation-triangle-fill text-danger") me-2"></i>
+            <span>@mensajeAlerta</span>
             <button type="button" class="btn-close" @onclick="() => mensajeAlerta = null"></button>
         </div>
     }
 
-    @if (!items.Any())
+    @if (!CarritoService.Items.Any())
     {
-        <div class="card p-5 text-center shadow-sm border-0">
-            <div class="mb-3">
-                <span class="bi bi-cart-x fs-1 text-muted"></span>
-            </div>
-            <h4>El carrito está vacío</h4>
-            <p class="text-muted">Explorá nuestro catálogo para agregar productos.</p>
-            <div class="mt-3">
-                <a href="catalogo" class="btn btn-primary">Ir al Catálogo</a>
+        <div class="card border-0 shadow-sm rounded-4 text-center py-5">
+            <div class="card-body">
+                <i class="bi bi-cart-x fs-1 text-secondary opacity-50 mb-3 d-block"></i>
+                <h4 class="fw-bold text-dark">Tu carrito está vacío</h4>
+                <p class="text-secondary mb-4">Explorá el catálogo para encontrar artículos disponibles.</p>
+                <NavLink class="btn btn-primary px-4 py-2 rounded-3" href="catalogo">
+                    <i class="bi bi-shop me-2"></i> Ir al Catálogo
+                </NavLink>
             </div>
         </div>
     }
     else
     {
-        <div class="row">
+        <div class="row g-4">
+            <!-- Grilla de Productos -->
             <div class="col-12 col-lg-8">
-                <div class="card shadow-sm border-0 mb-4">
+                <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
                     <div class="table-responsive">
                         <table class="table align-middle mb-0">
-                            <thead class="table-light">
+                            <thead class="table-dark">
                                 <tr>
-                                    <th>Producto</th>
-                                    <th>Precio</th>
-                                    <th style="width: 140px;">Cantidad</th>
-                                    <th>Subtotal</th>
-                                    <th></th>
+                                    <th class="py-3 px-3">Artículo</th>
+                                    <th class="py-3">Precio</th>
+                                    <th class="py-3 text-center">Cantidad</th>
+                                    <th class="py-3 text-end">Subtotal</th>
+                                    <th class="py-3 text-center px-3">Acción</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach (var item in items)
+                                @foreach (var item in CarritoService.Items)
                                 {
                                     <tr>
-                                        <td>
-                                            <div class="fw-bold">@item.Nombre</div>
-                                        </td>
-                                        <td>$@item.Precio</td>
-                                        <td>
-                                            <div class="input-group input-group-sm">
-                                                <button class="btn btn-outline-secondary" @onclick="() => ModificarCantidad(item.ProductoId, item.Cantidad - 1)">-</button>
-                                                <span class="input-group-text px-3 bg-white">@item.Cantidad</span>
-                                                <button class="btn btn-outline-secondary" @onclick="() => ModificarCantidad(item.ProductoId, item.Cantidad + 1)">+</button>
+                                        <td class="px-3 py-3">
+                                            <div class="d-flex align-items-center gap-3">
+                                                <img src="@(string.IsNullOrWhiteSpace(item.ImagenUrl) ? "https://placehold.co/100x100?text=Item" : item.ImagenUrl)"
+                                                     alt="@item.Nombre"
+                                                     class="rounded-3 object-fit-cover border"
+                                                     style="width: 50px; height: 50px;" />
+                                                <div>
+                                                    <div class="fw-bold text-dark">@item.Nombre</div>
+                                                    <small class="text-secondary">Stock disp.: @item.StockMaximo</small>
+                                                </div>
                                             </div>
                                         </td>
-                                        <td class="fw-bold">$@item.Subtotal</td>
-                                        <td class="text-end">
-                                            <button class="btn btn-sm btn-outline-danger" @onclick="() => EliminarItem(item.ProductoId)">
-                                                <span class="bi bi-trash"></span>
+                                        <td class="fw-medium text-dark">$@item.Precio.ToString("N2")</td>
+                                        <td class="text-center">
+                                            <div class="d-inline-flex align-items-center border rounded-3 bg-white">
+                                                <button class="btn btn-sm btn-link text-dark text-decoration-none px-2"
+                                                        @onclick="() => CarritoService.DecrementarCantidad(item.ProductoId)">
+                                                    <i class="bi bi-dash"></i>
+                                                </button>
+                                                <span class="px-2 fw-bold">@item.Cantidad</span>
+                                                <button class="btn btn-sm btn-link text-dark text-decoration-none px-2"
+                                                        disabled="@(item.Cantidad >= item.StockMaximo)"
+                                                        @onclick="() => CarritoService.IncrementarCantidad(item.ProductoId)">
+                                                    <i class="bi bi-plus"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                        <td class="text-end fw-bold text-dark">$@item.Subtotal.ToString("N2")</td>
+                                        <td class="text-center px-3">
+                                            <button class="btn btn-sm btn-outline-danger border-0 rounded-circle"
+                                                    title="Eliminar"
+                                                    @onclick="() => CarritoService.RemoverProducto(item.ProductoId)">
+                                                <i class="bi bi-trash"></i>
                                             </button>
                                         </td>
                                     </tr>
@@ -76,30 +107,33 @@
                 </div>
             </div>
 
-            <!-- Resumen y Checkout -->
+            <!-- Resumen de Orden y Botón Completar Compra -->
             <div class="col-12 col-lg-4">
-                <div class="card shadow-sm border-0 p-3">
-                    <h5 class="card-title mb-3">Resumen de Compra</h5>
-                    <div class="d-flex justify-content-between mb-2">
-                        <span>Productos (@items.Sum(i => i.Cantidad))</span>
-                        <span>$@TotalCompra</span>
+                <div class="card border-0 shadow-sm rounded-4 p-4">
+                    <h5 class="fw-bold mb-3 text-dark">Resumen del Pedido</h5>
+
+                    <div class="d-flex justify-content-between text-secondary mb-2">
+                        <span>Total de artículos:</span>
+                        <span>@CarritoService.ObtenerCantidadTotalItems() un.</span>
                     </div>
-                    <hr />
-                    <div class="d-flex justify-content-between mb-3 fw-bold fs-5">
-                        <span>Total</span>
-                        <span>$@TotalCompra</span>
+                    <div class="d-flex justify-content-between text-secondary mb-3">
+                        <span>Costo de envío:</span>
+                        <span class="text-success fw-medium">Gratis</span>
                     </div>
 
-                    <button class="btn btn-success w-100 py-2" @onclick="ConfirmarCompra" disabled="@procesandoCompra">
-                        @if (procesandoCompra)
-                        {
-                            <span class="spinner-border spinner-border-sm me-2"></span>
-                            <span>Procesando...</span>
-                        }
-                        else
-                        {
-                            <span>Finalizar Compra</span>
-                        }
+                    <hr class="my-3" />
+
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <span class="fs-5 fw-bold text-dark">Total a pagar:</span>
+                        <span class="fs-4 fw-bolder text-primary">$@CarritoService.ObtenerTotal().ToString("N2")</span>
+                    </div>
+
+                    <!-- BOTÓN COMPLETAR COMPRA -->
+                    <button class="btn btn-dark w-100 py-3 rounded-3 fw-bold d-flex align-items-center justify-content-center gap-2"
+                            @onclick="AbrirPasarelaPago"
+                            disabled="@(!CarritoService.Items.Any())">
+                        <i class="bi bi-credit-card-2-front"></i>
+                        <span>Completar Compra</span>
                     </button>
                 </div>
             </div>
@@ -107,88 +141,180 @@
     }
 </div>
 
+<!-- Modal Pasarela de Pago Simulada -->
+@if (mostrarModalPago)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow rounded-4 overflow-hidden">
+                <div class="modal-header bg-dark text-white py-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-shield-check text-success fs-5"></i>
+                        <h5 class="modal-title fw-bold mb-0">Pasarela Segura (Sandbox)</h5>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CerrarPasarelaPago" disabled="@procesandoPago"></button>
+                </div>
+
+                <div class="modal-body p-4">
+                    <div class="bg-light p-3 rounded-3 mb-4 border d-flex justify-content-between align-items-center">
+                        <span class="text-secondary small fw-medium">Importe final autorizado:</span>
+                        <span class="fs-5 fw-bold text-dark">$@CarritoService.ObtenerTotal().ToString("N2")</span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-secondary text-uppercase">Nombre del Titular</label>
+                        <input type="text" class="form-control" placeholder="Ej: JUAN PEREZ" @bind="titularTarjeta" disabled="@procesandoPago" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-secondary text-uppercase">Número de Tarjeta Ficticia</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-credit-card"></i></span>
+                            <input type="text" class="form-control" maxlength="19" placeholder="4500 0000 0000 0000" @bind="numeroTarjeta" disabled="@procesandoPago" />
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-bold text-secondary text-uppercase">Vencimiento</label>
+                            <input type="text" class="form-control" placeholder="MM/AA" maxlength="5" @bind="vencimientoTarjeta" disabled="@procesandoPago" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold text-secondary text-uppercase">CVV</label>
+                            <input type="password" class="form-control" placeholder="123" maxlength="4" @bind="cvvTarjeta" disabled="@procesandoPago" />
+                        </div>
+                    </div>
+
+                    <div class="form-check form-switch mb-2">
+                        <input class="form-check-input" type="checkbox" id="simularFalloCheck" @bind="simularFallo" disabled="@procesandoPago" />
+                        <label class="form-check-label small text-secondary" for="simularFalloCheck">
+                            Simular rechazo bancario (para pruebas de error)
+                        </label>
+                    </div>
+                </div>
+
+                <div class="modal-footer bg-light p-3">
+                    <button type="button" class="btn btn-secondary px-3" @onclick="CerrarPasarelaPago" disabled="@procesandoPago">Cancelar</button>
+                    <button type="button" class="btn btn-primary px-4 fw-bold" @onclick="ProcesarTransaccion" disabled="@procesandoPago">
+                        @if (procesandoPago)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                            <span>Validando transacción...</span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-lock-fill me-1"></i>
+                            <span>Pagar $@CarritoService.ObtenerTotal().ToString("N2")</span>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
-    private List<ItemCarrito> items = new();
-    private bool procesandoCompra = false;
+    private bool mostrarModalPago = false;
+    private bool procesandoPago = false;
+    private bool simularFallo = false;
+
+    private string titularTarjeta = "USUARIO PRUEBA";
+    private string numeroTarjeta = "4509 1234 5678 9010";
+    private string vencimientoTarjeta = "12/28";
+    private string cvvTarjeta = "123";
+
     private string? mensajeAlerta;
     private string claseAlerta = "alert-success";
 
-    private decimal TotalCompra => items.Sum(i => i.Subtotal);
-
     protected override void OnInitialized()
     {
-        items = CarritoService.ObtenerItems();
+        CarritoService.OnChange += StateHasChanged;
     }
 
-    private void ModificarCantidad(int productoId, int nuevaCantidad)
+    public void Dispose()
     {
-        if (nuevaCantidad <= 0)
-        {
-            CarritoService.EliminarItem(productoId);
-        }
-        else
-        {
-            CarritoService.ActualizarCantidad(productoId, nuevaCantidad);
-        }
-        items = CarritoService.ObtenerItems();
+        CarritoService.OnChange -= StateHasChanged;
     }
 
-    private void EliminarItem(int productoId)
+    private async Task AbrirPasarelaPago()
     {
-        CarritoService.EliminarItem(productoId);
-        items = CarritoService.ObtenerItems();
-    }
-
-    private async Task ConfirmarCompra()
-    {
-        procesandoCompra = true;
-        mensajeAlerta = null;
-
-        if (!await AuthService.EstaAutenticadoAsync())
+        var autenticado = await AuthService.EstaAutenticadoAsync();
+        if (!autenticado)
         {
             NavManager.NavigateTo("/login");
-            procesandoCompra = false;
             return;
         }
 
-        var usuarioId = await AuthService.ObtenerUsuarioIdAsync();
-        if (usuarioId == null)
+        mostrarModalPago = true;
+    }
+
+    private void CerrarPasarelaPago()
+    {
+        if (!procesandoPago)
         {
-            mensajeAlerta = "No se pudo recuperar la identidad del usuario. Reingresá.";
-            claseAlerta = "alert-danger";
-            procesandoCompra = false;
+            mostrarModalPago = false;
+        }
+    }
+
+    private async Task ProcesarTransaccion()
+    {
+        procesandoPago = true;
+
+        await Task.Delay(1800);
+
+        if (simularFallo)
+        {
+            MostrarMensaje("Transacción rechazada: Fondos insuficientes o tarjeta inválida en entorno de pruebas.", "alert-danger");
+            procesandoPago = false;
+            mostrarModalPago = false;
             return;
         }
 
-        var detalles = items.Select(i => new ItemSalidaDto
+        try
         {
-            ProductoId = i.ProductoId,
-            Cantidad = i.Cantidad,
-            PrecioVenta = i.Precio
-        }).ToList();
+            var email = await AuthService.ObtenerEmailAsync();
 
-        var request = new RegistrarSalidaDto
-        {
-            UsuarioId = usuarioId.Value,
-            ClienteId = 1,
-            Detalles = detalles
-        };
+            var peticion = new CrearSalidaRequest
+            {
+                ClienteNombre = titularTarjeta,
+                ClienteEmail = email,
+                Detalles = CarritoService.Items.Select(i => new CrearSalidaDetalleItemRequest
+                {
+                    ProductoId = i.ProductoId,
+                    Cantidad = i.Cantidad,
+                    PrecioVenta = i.Precio
+                }).ToList()
+            };
 
-        var exito = await VentaService.RegistrarSalidaAsync(request);
+            var respuesta = await Http.PostAsJsonAsync("api/Salidas", peticion);
 
-        if (exito)
-        {
-            CarritoService.VaciarCarrito();
-            items = CarritoService.ObtenerItems();
-            mensajeAlerta = "¡Compra registrada con éxito! Tu orden ha sido procesada.";
-            claseAlerta = "alert-success";
+            if (respuesta.IsSuccessStatusCode)
+            {
+                CarritoService.VaciarCarrito();
+                mostrarModalPago = false;
+                MostrarMensaje("¡Pago acreditado con éxito! La venta e impacto de stock han sido registrados.", "alert-success");
+            }
+            else
+            {
+                var errorDetalle = await respuesta.Content.ReadAsStringAsync();
+                MostrarMensaje($"El cobro fue simulado, pero la API rechazó la salida: {errorDetalle}", "alert-danger");
+                mostrarModalPago = false;
+            }
         }
-        else
+        catch (Exception ex)
         {
-            mensajeAlerta = "Ocurrió un error al procesar la salida en el servidor.";
-            claseAlerta = "alert-danger";
+            MostrarMensaje($"Error al procesar la salida: {ex.Message}", "alert-danger");
+            mostrarModalPago = false;
         }
+        finally
+        {
+            procesandoPago = false;
+        }
+    }
 
-        procesandoCompra = false;
+    private void MostrarMensaje(string mensaje, string clase)
+    {
+        mensajeAlerta = mensaje;
+        claseAlerta = clase;
     }
 }

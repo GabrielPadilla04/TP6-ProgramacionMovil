@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using TP6_Shared.DTOs.Auth;
+using TP6_Shared.DTOs.Proveedor.Request;
 
 namespace TP6_FrontEnd.Services
 {
@@ -147,6 +148,12 @@ namespace TP6_FrontEnd.Services
             var json = Encoding.UTF8.GetString(bytes);
 
             return JsonSerializer.Deserialize<Dictionary<string, object>>(json);
+        }
+
+        public async Task<bool> RegistrarProveedorAsync(CrearProveedorRequest request)
+        {
+            var response = await _httpClient.PostAsJsonAsync("api/auth/register-proveedor", request);
+            return response.IsSuccessStatusCode;
         }
     }
 }

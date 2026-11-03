@@ -3,84 +3,302 @@
 @using TP6_Shared.DTOs.Producto.Response
 @using TP6_FrontEnd.Services
 @inject IProductoService ProductoService
+@inject ICarritoService CarritoService
 @inject IAuthService AuthService
 @inject NavigationManager NavManager
+@inject HttpClient Http
 
-<div class="container mt-4">
-    <!-- Buscador y Filtros -->
-    <div class="row align-items-center mb-4 g-3">
-        <div class="col-12 col-md-4">
-            <h2 class="mb-0">Catálogo</h2>
+<style>
+    .catalogo-wrapper {
+        background-color: #f8fafc;
+        min-height: 100vh;
+        font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+    }
+
+    .text-indigo {
+        color: #4f46e5;
+    }
+
+    .bg-indigo {
+        background-color: #4f46e5;
+    }
+
+    .text-slate {
+        color: #64748b;
+    }
+
+    /* Barra de filtros */
+    .filter-card {
+        background: white;
+        border-radius: 16px;
+        border: 1px solid rgba(226, 232, 240, 0.8);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+    }
+
+    .form-control-modern, .form-select-modern {
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+        padding: 10px 16px;
+        background-color: #f8fafc;
+        font-size: 0.95rem;
+        transition: all 0.2s ease;
+    }
+
+        .form-control-modern:focus, .form-select-modern:focus {
+            background-color: white;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        }
+
+    /* Tarjetas de Producto */
+    .product-card {
+        background: white;
+        border-radius: 18px;
+        border: 1px solid rgba(226, 232, 240, 0.7);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+        .product-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 16px 30px rgba(15, 23, 42, 0.08);
+        }
+
+    .product-img-wrapper {
+        height: 220px;
+        background-color: #f1f5f9;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .product-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.35s ease;
+    }
+
+    .product-card:hover .product-img {
+        transform: scale(1.05);
+    }
+
+    /* Badges */
+    .badge-float-stock {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        padding: 6px 12px;
+        border-radius: 30px;
+        font-weight: 600;
+        font-size: 0.75rem;
+        backdrop-filter: blur(8px);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+        z-index: 2;
+    }
+
+        .badge-float-stock.in-stock {
+            background-color: rgba(220, 252, 231, 0.95);
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        .badge-float-stock.out-of-stock {
+            background-color: rgba(254, 226, 226, 0.95);
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+    .badge-float-category {
+        position: absolute;
+        bottom: 12px;
+        left: 12px;
+        background-color: rgba(15, 23, 42, 0.75);
+        color: #f8fafc;
+        font-size: 0.7rem;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 8px;
+        backdrop-filter: blur(4px);
+    }
+
+    /* Botón */
+    .btn-gradient-primary {
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-weight: 600;
+        padding: 10px;
+        transition: all 0.25s ease;
+        box-shadow: 0 4px 10px rgba(99, 102, 241, 0.2);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+        .btn-gradient-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 18px rgba(99, 102, 241, 0.35);
+            color: white;
+        }
+
+        .btn-gradient-primary:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+    .btn-detail {
+        background-color: #f1f5f9;
+        color: #334155;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        transition: all 0.2s ease;
+    }
+
+        .btn-detail:hover {
+            background-color: #e2e8f0;
+            color: #0f172a;
+        }
+</style>
+
+<div class="catalogo-wrapper py-4 px-3 px-md-5">
+    <!-- Header Principal -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+        <div>
+            <h1 class="fw-bolder mb-1 text-dark" style="letter-spacing: -0.5px; font-size: 2rem;">Catálogo Comercial</h1>
+            <p class="text-slate mb-0">Explorá los artículos disponibles y consultá stock en tiempo real.</p>
         </div>
-        <div class="col-12 col-md-5">
-            <input type="text"
-                   class="form-control"
-                   placeholder="Buscar por nombre..."
-                   @bind="textoBusqueda"
-                   @bind:event="oninput"
-                   @onkeyup="AplicarFiltros" />
-        </div>
-        <div class="col-12 col-md-3">
-            <select class="form-select" @bind="categoriaSeleccionada" @bind:after="AplicarFiltros">
-                <option value="">Todas las categorías</option>
-                <option value="Electrónica">Electrónica</option>
-                <option value="Ropa">Ropa</option>
-            </select>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-white text-slate border px-3 py-2 rounded-pill shadow-sm">
+                <i class="bi bi-box-seam me-1 text-indigo"></i> @(productosMostrados?.Count ?? 0) artículos mostrados
+            </span>
         </div>
     </div>
 
-    <!-- Estados de carga, error y validación -->
+    <!-- Barra de Filtros y Búsqueda -->
+    <div class="filter-card p-3 p-md-4 mb-4">
+        <div class="row g-3 align-items-center">
+            <div class="col-12 col-md-7">
+                <div class="position-relative">
+                    <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-slate"></i>
+                    <input type="text"
+                           class="form-control form-control-modern ps-5"
+                           placeholder="Buscar por nombre de producto..."
+                           @bind="textoBusqueda"
+                           @bind:event="oninput"
+                           @onkeyup="AplicarFiltros" />
+                </div>
+            </div>
+            <div class="col-12 col-md-5">
+                <div class="position-relative">
+                    <select class="form-select form-select-modern" @bind="categoriaSeleccionada" @bind:after="AplicarFiltros">
+                        <option value="">Todas las categorías</option>
+                        @foreach (var cat in categoriasDisponibles)
+                        {
+                            <option value="@cat">@cat</option>
+                        }
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estados de Carga y Error -->
     @if (cargando)
     {
-        <div class="d-flex justify-content-center align-items-center my-5">
-            <div class="spinner-border text-primary" role="status"></div>
-            <span class="ms-3 text-muted">Cargando productos...</span>
+        <div class="text-center py-5">
+            <div class="spinner-grow text-indigo" style="width: 3rem; height: 3rem;" role="status"></div>
+            <p class="mt-3 fw-medium text-slate">Sincronizando inventario...</p>
         </div>
     }
     else if (!string.IsNullOrEmpty(mensajeError))
     {
-        <div class="alert alert-danger shadow-sm" role="alert">
-            <h5 class="alert-heading">Error al conectar con el servidor</h5>
-            <p class="mb-2">@mensajeError</p>
-            <button class="btn btn-outline-danger btn-sm" @onclick="CargarProductos">Reintentar</button>
+        <div class="alert alert-danger rounded-4 border-0 shadow-sm p-4 text-center my-4" role="alert">
+            <i class="bi bi-cloud-slash fs-1 text-danger d-block mb-2"></i>
+            <h5 class="fw-bold">Error de sincronización</h5>
+            <p class="text-secondary small mb-3">@mensajeError</p>
+            <button class="btn btn-outline-danger px-4 rounded-3" @onclick="CargarProductos">
+                <i class="bi bi-arrow-clockwise me-1"></i> Reintentar
+            </button>
         </div>
     }
     else if (productosMostrados == null || !productosMostrados.Any())
     {
-        <div class="alert alert-warning" role="alert">
-            No se encontraron productos que coincidan con la búsqueda.
+        <div class="text-center py-5 bg-white rounded-4 border shadow-sm my-4">
+            <div class="bg-light rounded-circle d-inline-flex p-4 mb-3">
+                <i class="bi bi-inbox fs-1 text-slate opacity-75"></i>
+            </div>
+            <h5 class="fw-bold text-dark">No se encontraron productos</h5>
+            <p class="text-slate mb-0">Probá modificando el criterio de búsqueda o seleccionando otra categoría.</p>
         </div>
     }
     else
     {
-        <!-- Grilla de productos -->
-        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        <!-- Grilla de Cards Modernas -->
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4 pb-5">
             @foreach (var producto in productosMostrados)
             {
                 <div class="col">
-                    <div class="card h-100 shadow-sm border-0">
-                        <div class="bg-light text-center py-5 rounded-top">
-                            <span class="text-secondary">📷 Imagen no disponible</span>
+                    <div class="product-card h-100">
+                        <!-- Contenedor Imagen y Badges -->
+                        <div class="product-img-wrapper">
+                            @if (producto.Stock > 0)
+                            {
+                                <span class="badge-float-stock in-stock">
+                                    <i class="bi bi-check2-circle me-1"></i> @producto.Stock disponibles
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge-float-stock out-of-stock">
+                                    <i class="bi bi-x-circle me-1"></i> Agotado
+                                </span>
+                            }
+
+                            @if (!string.IsNullOrWhiteSpace(producto.CategoriaNombre))
+                            {
+                                <span class="badge-float-category">
+                                    @producto.CategoriaNombre
+                                </span>
+                            }
+
+                            <img src="@ResolverUrlImagen(producto.ImagenUrl)"
+                                 alt="@producto.Nombre"
+                                 class="product-img"
+                                 loading="lazy"
+                                 @onerror='() => producto.ImagenUrl = "https://placehold.co/400x300?text=Sin+Imagen"' />
                         </div>
 
-                        <div class="card-body d-flex flex-column">
-                            <h5 class="card-title text-truncate">@producto.Nombre</h5>
-                            <h4 class="text-success mb-2">$@producto.Precio</h4>
+                        <!-- Cuerpo del Producto -->
+                        <div class="card-body p-4 d-flex flex-column">
+                            <h5 class="fw-bold text-dark mb-1 text-truncate" title="@producto.Nombre">@producto.Nombre</h5>
+                            <span class="text-slate small mb-3"><i class="bi bi-upc-scan me-1"></i>ID: #@producto.Id</span>
 
-                            <div class="mb-3">
-                                @if (producto.Stock > 0)
-                                {
-                                    <span class="badge bg-success">Stock: @producto.Stock</span>
-                                }
-                                else
-                                {
-                                    <span class="badge bg-danger">Sin stock</span>
-                                }
+                            <div class="mt-auto pt-2 d-flex align-items-center justify-content-between mb-3">
+                                <div>
+                                    <span class="text-slate small d-block" style="font-size: 0.75rem;">Precio unitario</span>
+                                    <span class="fs-4 fw-bolder text-dark">$@producto.Precio.ToString("N2")</span>
+                                </div>
                             </div>
 
-                            <a href="/producto/@producto.Id" class="btn btn-primary mt-auto w-100">
-                                Ver detalle
-                            </a>
+                            <div class="d-flex gap-2">
+                                <a href="/producto/@producto.Id" class="btn btn-detail px-3 d-flex align-items-center justify-content-center" title="Ver detalle completo">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <button class="btn-gradient-primary flex-grow-1"
+                                        disabled="@(producto.Stock <= 0)"
+                                        @onclick="() => AgregarAlCarrito(producto)">
+                                    <i class="bi bi-cart-plus me-1"></i>
+                                    <span>@(producto.Stock > 0 ? "Comprar" : "Sin Stock")</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -92,6 +310,7 @@
 @code {
     private List<ProductoListadoResponse>? productosOriginales;
     private List<ProductoListadoResponse> productosMostrados = new();
+    private List<string> categoriasDisponibles = new();
 
     private string textoBusqueda = "";
     private string categoriaSeleccionada = "";
@@ -102,7 +321,6 @@
     {
         if (firstRender)
         {
-            // Verificamos si el usuario tiene sesión activa ANTES de pegarle a la API
             var autenticado = await AuthService.EstaAutenticadoAsync();
 
             if (!autenticado)
@@ -111,7 +329,6 @@
                 return;
             }
 
-            // Si está logueado, continúa normalmente
             await CargarProductos();
             StateHasChanged();
         }
@@ -126,6 +343,14 @@
         {
             var resultado = await ProductoService.ObtenerTodosAsync(1, 50);
             productosOriginales = resultado ?? new List<ProductoListadoResponse>();
+
+            categoriasDisponibles = productosOriginales
+                .Where(p => !string.IsNullOrWhiteSpace(p.CategoriaNombre))
+                .Select(p => p.CategoriaNombre!)
+                .Distinct()
+                .OrderBy(c => c)
+                .ToList();
+
             AplicarFiltros();
         }
         catch (Exception ex)
@@ -146,13 +371,11 @@
 
         var query = productosOriginales.AsEnumerable();
 
-        // 1. Filtro por nombre
         if (!string.IsNullOrWhiteSpace(textoBusqueda))
         {
             query = query.Where(p => p.Nombre.Contains(textoBusqueda, StringComparison.OrdinalIgnoreCase));
         }
 
-        // 2. Filtro por categoría (Agregado)
         if (!string.IsNullOrWhiteSpace(categoriaSeleccionada))
         {
             query = query.Where(p => p.CategoriaNombre != null &&
@@ -160,5 +383,28 @@
         }
 
         productosMostrados = query.ToList();
+    }
+
+    private void AgregarAlCarrito(ProductoListadoResponse prod)
+    {
+        CarritoService.AgregarProducto(prod.Id, prod.Nombre, prod.Precio, prod.Stock, prod.ImagenUrl);
+    }
+
+    private string ResolverUrlImagen(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            return "https://placehold.co/400x300?text=Sin+Imagen";
+        }
+
+        if (url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+            url.StartsWith("https://", StringComparison.OrdinalIgnoreCase) ||
+            url.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
+        {
+            return url;
+        }
+
+        var baseAddress = Http.BaseAddress?.ToString().TrimEnd('/') ?? "";
+        return $"{baseAddress}/{url.TrimStart('/')}";
     }
 }

@@ -230,6 +230,9 @@ namespace TP6_Servicios_API_REST.Migrations
                     b.Property<decimal>("Precio")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<int?>("ProveedorId")
+                        .HasColumnType("int");
+
                     b.Property<int>("Stock")
                         .HasColumnType("int");
 
@@ -238,6 +241,8 @@ namespace TP6_Servicios_API_REST.Migrations
                     b.HasIndex("CategoriaId");
 
                     b.HasIndex("ImagenId");
+
+                    b.HasIndex("ProveedorId");
 
                     b.ToTable("Productos");
                 });
@@ -268,7 +273,13 @@ namespace TP6_Servicios_API_REST.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("varchar(50)");
 
+                    b.Property<int?>("UsuarioId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("UsuarioId")
+                        .IsUnique();
 
                     b.ToTable("Proveedores");
                 });
@@ -458,9 +469,24 @@ namespace TP6_Servicios_API_REST.Migrations
                         .WithMany()
                         .HasForeignKey("ImagenId");
 
+                    b.HasOne("TP6_Servicios_API_REST.Models.Proveedor", "Proveedor")
+                        .WithMany()
+                        .HasForeignKey("ProveedorId");
+
                     b.Navigation("Categoria");
 
                     b.Navigation("Imagen");
+
+                    b.Navigation("Proveedor");
+                });
+
+            modelBuilder.Entity("TP6_Servicios_API_REST.Models.Proveedor", b =>
+                {
+                    b.HasOne("TP6_Servicios_API_REST.Models.Usuario", "Usuario")
+                        .WithOne("Proveedor")
+                        .HasForeignKey("TP6_Servicios_API_REST.Models.Proveedor", "UsuarioId");
+
+                    b.Navigation("Usuario");
                 });
 
             modelBuilder.Entity("TP6_Servicios_API_REST.Models.Salida", b =>
@@ -547,6 +573,8 @@ namespace TP6_Servicios_API_REST.Migrations
             modelBuilder.Entity("TP6_Servicios_API_REST.Models.Usuario", b =>
                 {
                     b.Navigation("Ingresos");
+
+                    b.Navigation("Proveedor");
 
                     b.Navigation("Salidas");
                 });

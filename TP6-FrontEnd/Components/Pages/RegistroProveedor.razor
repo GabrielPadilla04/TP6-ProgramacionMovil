@@ -1,0 +1,118 @@
+﻿@page "/registro-proveedor"
+@using TP6_Shared.DTOs
+@using TP6_FrontEnd.Services
+@using TP6_Shared.DTOs.Proveedor.Request
+@inject IAuthService AuthService
+@inject NavigationManager NavManager
+
+<div class="container py-5 d-flex justify-content-center">
+    <div class="card shadow-sm border-0 rounded-4 p-4" style="max-width: 550px; width: 100%;">
+        <div class="text-center mb-4">
+            <h3 class="fw-bold text-dark">Registro de Proveedor</h3>
+            <p class="text-muted small">Creá tu cuenta comercial para publicar y gestionar tus artículos</p>
+        </div>
+
+        @if (!string.IsNullOrEmpty(mensajeError))
+        {
+            <div class="alert alert-danger rounded-3 py-2 small">@mensajeError</div>
+        }
+
+        <EditForm Model="modelo" OnValidSubmit="ProcesarRegistro">
+            <DataAnnotationsValidator />
+
+            <h6 class="fw-bold text-primary small text-uppercase mb-3">Datos de Acceso</h6>
+
+            <div class="mb-3">
+                <label class="form-label small fw-semibold">Nombre de Contacto / Representante</label>
+                <InputText class="form-control" placeholder="Ej: Juan Pérez" @bind-Value="modelo.NombreCompleto" />
+                <ValidationMessage For="@(() => modelo.NombreCompleto)" class="text-danger small" />
+            </div>
+
+            <div class="row g-2 mb-3">
+                <div class="col-12 col-md-6">
+                    <label class="form-label small fw-semibold">Correo Electrónico</label>
+                    <InputText class="form-control" type="email" placeholder="correo@empresa.com" @bind-Value="modelo.Email" />
+                    <ValidationMessage For="@(() => modelo.Email)" class="text-danger small" />
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label small fw-semibold">Contraseña</label>
+                    <InputText class="form-control" type="password" placeholder="Mínimo 6 caracteres" @bind-Value="modelo.Password" />
+                    <ValidationMessage For="@(() => modelo.Password)" class="text-danger small" />
+                </div>
+            </div>
+
+            <hr class="my-4 text-muted" />
+
+            <h6 class="fw-bold text-primary small text-uppercase mb-3">Datos Comerciales</h6>
+
+            <div class="mb-3">
+                <label class="form-label small fw-semibold">Razón Social o Nombre de Fantasía</label>
+                <InputText class="form-control" placeholder="Ej: Distribuidora Pampeana SRL" @bind-Value="modelo.RazonSocial" />
+                <ValidationMessage For="@(() => modelo.RazonSocial)" class="text-danger small" />
+            </div>
+
+            <div class="row g-2 mb-4">
+                <div class="col-12 col-md-6">
+                    <label class="form-label small fw-semibold">CUIT</label>
+                    <InputText class="form-control" placeholder="30-XXXXXXXX-X" @bind-Value="modelo.Cuit" />
+                    <ValidationMessage For="@(() => modelo.Cuit)" class="text-danger small" />
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label small fw-semibold">Teléfono</label>
+                    <InputText class="form-control" placeholder="Ej: 2954-123456" @bind-Value="modelo.Telefono" />
+                    <ValidationMessage For="@(() => modelo.Telefono)" class="text-danger small" />
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold rounded-3" disabled="@cargando">
+                @if (cargando)
+                {
+                    <span class="spinner-border spinner-border-sm me-2"></span>
+                    <span>Registrando cuenta...</span>
+                }
+                else
+                {
+                    <span>Registrarme como Proveedor</span>
+                }
+            </button>
+        </EditForm>
+
+        <div class="text-center mt-3">
+            <span class="small text-muted">¿Ya tenés cuenta? </span>
+            <a href="/login" class="small text-decoration-none fw-semibold">Iniciá sesión aquí</a>
+        </div>
+    </div>
+</div>
+
+@code {
+    private CrearProveedorRequest modelo = new();
+    private bool cargando = false;
+    private string? mensajeError;
+
+    private async Task ProcesarRegistro()
+    {
+        cargando = true;
+        mensajeError = null;
+
+        try
+        {
+            var exito = await AuthService.RegistrarProveedorAsync(modelo);
+            if (exito)
+            {
+                NavManager.NavigateTo("/login");
+            }
+            else
+            {
+                mensajeError = "No se pudo completar el registro. Verificá si el email o CUIT ya están en uso.";
+            }
+        }
+        catch (Exception ex)
+        {
+            mensajeError = $"Error de comunicación: {ex.Message}";
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+}

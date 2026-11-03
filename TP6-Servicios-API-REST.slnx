@@ -1,5 +1,7 @@
 <Solution>
-  <Project Path="TP6-FrontEnd/TP6-FrontEnd.csproj" />
+  <Project Path="TP6-FrontEnd/TP6-FrontEnd.csproj">
+    <Deploy Solution="Debug|*" />
+  </Project>
   <Project Path="TP6.Shared/TP6-Shared.csproj" />
   <Project Path="TP6_Servicios_API_REST/TP6-Servicios-API-REST.csproj" />
 </Solution>

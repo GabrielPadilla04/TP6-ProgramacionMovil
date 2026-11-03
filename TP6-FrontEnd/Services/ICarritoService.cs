@@ -1,16 +1,14 @@
-﻿using TP6_Shared.DTOs.Producto.Response;
-using TP6_FrontEnd.Models;
+﻿using TP6_FrontEnd.Services;
 
-namespace TP6_FrontEnd.Services
+public interface ICarritoService
 {
-    public interface ICarritoService
-    {
-        List<ItemCarrito> ObtenerItems();
-        void AgregarItem(ProductoResponse producto, int cantidad);
-        void EliminarItem(int productoId);
-        void VaciarCarrito();
-        decimal ObtenerTotal();
-        void ActualizarCantidad(int productoId, int cantidad);
-        event Action OnCarritoCambiado;
-    }
+    event Action? OnChange;
+    List<CartItem> Items { get; }
+    void AgregarProducto(int id, string nombre, decimal precio, int stock, string? imagenUrl, int cantidad = 1);
+    void IncrementarCantidad(int productoId);
+    void DecrementarCantidad(int productoId);
+    void RemoverProducto(int productoId);
+    void VaciarCarrito();
+    decimal ObtenerTotal();
+    int ObtenerCantidadTotalItems();
 }

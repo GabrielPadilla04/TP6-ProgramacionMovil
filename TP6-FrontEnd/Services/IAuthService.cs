@@ -1,4 +1,5 @@
 ﻿using TP6_Shared.DTOs.Auth;
+using TP6_Shared.DTOs.Proveedor.Request;
 
 namespace TP6_FrontEnd.Services
 {
@@ -12,5 +13,6 @@ namespace TP6_FrontEnd.Services
         Task<string?> ObtenerRolAsync();
         Task<string?> ObtenerEmailAsync();
         Task<bool> EstaAutenticadoAsync();
+        Task<bool> RegistrarProveedorAsync(CrearProveedorRequest request);
     }
 }

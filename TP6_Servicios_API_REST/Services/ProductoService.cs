@@ -16,12 +16,26 @@ namespace TP6_Servicios_API_REST.Services
             _context = context;
         }
 
-        public async Task<List<ProductoListadoResponse>> ObtenerTodos(int page = 1, int pageSize = 10)
+        // 1. Obtener listado con soporte multi-vendor
+        public async Task<List<ProductoListadoResponse>> ObtenerTodos(int page, int pageSize, int usuarioId, string rol, bool soloMios = false)
         {
             try
             {
-                return await _context.Productos
-                    .Include(p => p.Categoria)
+                IQueryable<Producto> query = _context.Productos
+                    .Include(p => p.Categoria);
+
+                // Si quien consulta es Proveedor, únicamente ve sus propios productos
+                if (rol == Roles.Proveedor)
+                {
+                    int proveedorId = await _context.Proveedores
+                        .Where(pr => pr.UsuarioId == usuarioId)
+                        .Select(pr => pr.Id)
+                        .FirstOrDefaultAsync();
+
+                    query = query.Where(p => p.ProveedorId == proveedorId);
+                }
+
+                return await query
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
                     .Select(p => new ProductoListadoResponse(
@@ -39,6 +53,7 @@ namespace TP6_Servicios_API_REST.Services
             }
         }
 
+        // 2. Obtener por ID
         public async Task<ProductoResponse> ObtenerPorId(int id)
         {
             try
@@ -69,7 +84,8 @@ namespace TP6_Servicios_API_REST.Services
             }
         }
 
-        public async Task<ProductoListadoResponse> Crear(CrearProductoRequest dto)
+        // 3. Crear asociando al Proveedor correspondiente
+        public async Task<ProductoListadoResponse> Crear(CrearProductoRequest dto, int usuarioId = 0, string rol = "")
         {
             try
             {
@@ -87,6 +103,21 @@ namespace TP6_Servicios_API_REST.Services
                     throw new RecursoNoExisteException($"La categoría con ID {dto.CategoriaId} no existe.");
                 }
 
+                int? proveedorId = null;
+
+                if (rol == Roles.Proveedor)
+                {
+                    proveedorId = await _context.Proveedores
+                        .Where(pr => pr.UsuarioId == usuarioId)
+                        .Select(pr => pr.Id)
+                        .FirstOrDefaultAsync();
+
+                    if (proveedorId == null || proveedorId == 0)
+                    {
+                        throw new DatosLlegaronErradosException("No se encontró el perfil de proveedor asociado a este usuario.");
+                    }
+                }
+
                 Producto nuevoProducto = new Producto
                 {
                     Nombre = dto.Nombre,
@@ -94,7 +125,8 @@ namespace TP6_Servicios_API_REST.Services
                     Precio = dto.Precio,
                     Stock = dto.Stock,
                     CategoriaId = dto.CategoriaId,
-                    ImagenUrl = dto.ImagenUrl
+                    ImagenUrl = dto.ImagenUrl,
+                    ProveedorId = proveedorId // Vinculado a su proveedor correspondiente
                 };
 
                 _context.Productos.Add(nuevoProducto);
@@ -113,9 +145,9 @@ namespace TP6_Servicios_API_REST.Services
             }
             catch (RecursoExistenteException) { throw; }
             catch (RecursoNoExisteException) { throw; }
+            catch (DatosLlegaronErradosException) { throw; }
             catch (DbUpdateException ex)
             {
-                // Atrapa el error exacto de MySQL y lo expone en la respuesta HTTP
                 string mensajeInner = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
                 throw new BaseDeDatosException($"Error exacto de MySQL: {mensajeInner}");
             }
@@ -125,7 +157,8 @@ namespace TP6_Servicios_API_REST.Services
             }
         }
 
-        public async Task Actualizar(int id, ActualizarProductoRequest dto)
+        // 4. Actualizar con validación de propiedad de proveedor
+        public async Task Actualizar(int id, ActualizarProductoRequest dto, int usuarioId = 0, string rol = "")
         {
             try
             {
@@ -135,6 +168,9 @@ namespace TP6_Servicios_API_REST.Services
                 {
                     throw new RecursoNoExisteException($"No se encontró el producto con ID {id}.");
                 }
+
+                // Valida que si es proveedor, el producto sea de él
+                await ValidarPermisoModificacion(id, usuarioId, rol);
 
                 if (producto.CategoriaId != dto.CategoriaId)
                 {
@@ -160,6 +196,7 @@ namespace TP6_Servicios_API_REST.Services
                 await _context.SaveChangesAsync();
             }
             catch (RecursoNoExisteException) { throw; }
+            catch (UnauthorizedAccessException) { throw; }
             catch (DbUpdateException ex)
             {
                 string mensajeInner = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
@@ -171,7 +208,8 @@ namespace TP6_Servicios_API_REST.Services
             }
         }
 
-        public async Task Eliminar(int id)
+        // 5. Eliminar con validación de propiedad
+        public async Task Eliminar(int id, int usuarioId = 0, string rol = "")
         {
             try
             {
@@ -184,6 +222,9 @@ namespace TP6_Servicios_API_REST.Services
                 {
                     throw new RecursoNoExisteException($"No se encontró el producto con ID {id}.");
                 }
+
+                // Valida si tiene permiso antes de chequear transacciones
+                await ValidarPermisoModificacion(id, usuarioId, rol);
 
                 if (producto.IngresoDetalles != null && producto.IngresoDetalles.Any())
                 {
@@ -199,6 +240,7 @@ namespace TP6_Servicios_API_REST.Services
                 await _context.SaveChangesAsync();
             }
             catch (RecursoNoExisteException) { throw; }
+            catch (UnauthorizedAccessException) { throw; }
             catch (DatosLlegaronErradosException) { throw; }
             catch (DbUpdateException ex)
             {
@@ -208,6 +250,32 @@ namespace TP6_Servicios_API_REST.Services
             catch (Exception ex)
             {
                 throw new BaseDeDatosException($"Error al eliminar el producto: {ex.Message}");
+            }
+        }
+
+        // 6. Método auxiliar para validar si el usuario autenticado tiene permiso sobre el ítem
+        public async Task ValidarPermisoModificacion(int productoId, int usuarioId, string rol)
+        {
+            if (rol == Roles.Administrador) return;
+
+            if (rol == Roles.Proveedor)
+            {
+                int proveedorId = await _context.Proveedores
+                    .Where(pr => pr.UsuarioId == usuarioId)
+                    .Select(pr => pr.Id)
+                    .FirstOrDefaultAsync();
+
+                bool pertenece = await _context.Productos
+                    .AnyAsync(p => p.Id == productoId && p.ProveedorId == proveedorId);
+
+                if (!pertenece)
+                {
+                    throw new UnauthorizedAccessException("No tenés permiso para operar sobre un producto de otro proveedor.");
+                }
+            }
+            else
+            {
+                throw new UnauthorizedAccessException("Rol no autorizado para modificar o eliminar productos.");
             }
         }
     }

@@ -22,7 +22,7 @@ namespace TP6_Servicios_API_REST.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = $"{Roles.Administrador},{Roles.Usuario}")]
+        [Authorize(Roles = $"{Roles.Administrador},{Roles.Usuario},{Roles.Proveedor}")]
         public async Task<ActionResult<List<CategoriaResponse>>> ObtenerTodos([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             try
@@ -36,7 +36,7 @@ namespace TP6_Servicios_API_REST.Controllers
         }
 
         [HttpGet("{id}")]
-        [Authorize(Roles = $"{Roles.Administrador},{Roles.Usuario}")]
+        [Authorize(Roles = $"{Roles.Administrador},{Roles.Usuario},{Roles.Proveedor}")]
         public async Task<ActionResult<CategoriaResponse>> ObtenerPorId(int id)
         {
             try
@@ -55,7 +55,7 @@ namespace TP6_Servicios_API_REST.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = Roles.Administrador)]
+        [Authorize(Roles = $"{Roles.Administrador},{Roles.Proveedor}")]
         public async Task<ActionResult<CategoriaResponse>> Crear(CrearCategoriaRequest dto)
         {
             try
@@ -78,7 +78,7 @@ namespace TP6_Servicios_API_REST.Controllers
         }
 
         [HttpPut("{id}")]
-        [Authorize(Roles = Roles.Administrador)]
+        [Authorize(Roles = $"{Roles.Administrador},{Roles.Proveedor}")]
         public async Task<IActionResult> Actualizar(int id, ActualizarCategoriaRequest dto)
         {
             try
@@ -105,7 +105,7 @@ namespace TP6_Servicios_API_REST.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Roles = Roles.Administrador)]
+        [Authorize(Roles = $"{Roles.Administrador},{Roles.Proveedor}")]
         public async Task<IActionResult> Eliminar(int id)
         {
             try

@@ -21,6 +21,8 @@ namespace TP6_Servicios_API_REST.Models
 
         public DateTime FechaCreacion { get; set; } = DateTime.Now;
 
+        public Proveedor? Proveedor { get; set; }
+
         // Relaciones (1 a N)
         public ICollection<Ingreso> Ingresos { get; set; } = new List<Ingreso>();
 

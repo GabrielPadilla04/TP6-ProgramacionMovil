@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using TP6_Servicios_API_REST.Data;
+using TP6_Shared.DTOs.Proveedor.Request;
 using TP6_Shared.DTOs.Auth;
 using TP6_Servicios_API_REST.Models;
 
@@ -25,7 +26,7 @@ namespace TP6_Servicios_API_REST.Controllers
             _configuration = configuration;
         }
 
-        // 1. Registro PÚBLICO: Todo aquel que se registre por acá es estrictamente CLIENTE
+        // 1. Registro PÚBLICO: Clientes / Usuarios estándar
         [HttpPost("register")]
         public async Task<IActionResult> Register(RegisterDto dto)
         {
@@ -37,7 +38,7 @@ namespace TP6_Servicios_API_REST.Controllers
                 NombreCompleto = dto.NombreCompleto,
                 Email = dto.Email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
-                Rol = Roles.Usuario, // Asignación fija y segura para el flujo normal
+                Rol = Roles.Usuario,
                 FechaCreacion = DateTime.UtcNow
             };
 
@@ -47,7 +48,57 @@ namespace TP6_Servicios_API_REST.Controllers
             return Ok(new { mensaje = "Cuenta de Usuario creada correctamente." });
         }
 
-        // 2. Registro PROTEGIDO: Solo un Administrador autenticado puede crear otro Administrador
+        // 2. Registro de PROVEEDOR: Crea Usuario (Rol Proveedor) + Entidad Proveedor
+        [HttpPost("register-proveedor")]
+        public async Task<IActionResult> RegisterProveedor(CrearProveedorRequest dto)
+        {
+            if (await _context.Usuarios.AnyAsync(u => u.Email == dto.Email))
+                return BadRequest(new { mensaje = "El correo electrónico ya está registrado." });
+
+            if (await _context.Proveedores.AnyAsync(p => p.Cuit == dto.Cuit))
+                return BadRequest(new { mensaje = "El CUIT ingresado ya se encuentra registrado." });
+
+            using var transaccion = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // 1. Crear el usuario del proveedor
+                var usuario = new Usuario
+                {
+                    NombreCompleto = dto.NombreCompleto,
+                    Email = dto.Email,
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
+                    Rol = Roles.Proveedor,
+                    FechaCreacion = DateTime.UtcNow
+                };
+
+                _context.Usuarios.Add(usuario);
+                await _context.SaveChangesAsync();
+
+                // 2. Crear el registro del proveedor asociado al usuario
+                var proveedor = new Proveedor
+                {
+                    RazonSocial = dto.RazonSocial,
+                    Cuit = dto.Cuit,
+                    Telefono = dto.Telefono,
+                    Email = dto.Email,
+                    UsuarioId = usuario.Id
+                };
+
+                _context.Proveedores.Add(proveedor);
+                await _context.SaveChangesAsync();
+
+                await transaccion.CommitAsync();
+
+                return Ok(new { mensaje = "Cuenta de Proveedor registrada exitosamente." });
+            }
+            catch (Exception ex)
+            {
+                await transaccion.RollbackAsync();
+                return StatusCode(StatusCodes.Status500InternalServerError, new { mensaje = $"Error al registrar proveedor: {ex.Message}" });
+            }
+        }
+
+        // 3. Registro PROTEGIDO: Solo un Administrador puede crear otro Administrador
         [HttpPost("register-admin")]
         [Authorize(Roles = Roles.Administrador)]
         public async Task<IActionResult> RegisterAdmin(RegisterDto dto)
@@ -73,7 +124,11 @@ namespace TP6_Servicios_API_REST.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginDto dto)
         {
-            var usuario = await _context.Usuarios.FirstOrDefaultAsync(u => u.Email == dto.Email);
+            // Incluimos la navegación al Proveedor para conocer su Id si corresponde
+            var usuario = await _context.Usuarios
+                .Include(u => u.Proveedor)
+                .FirstOrDefaultAsync(u => u.Email == dto.Email);
+
             if (usuario == null || !BCrypt.Net.BCrypt.Verify(dto.Password, usuario.PasswordHash))
                 return Unauthorized(new { mensaje = "Credenciales inválidas." });
 
@@ -85,19 +140,24 @@ namespace TP6_Servicios_API_REST.Controllers
         {
             var jwtSettings = _configuration.GetSection("Jwt");
 
-            // Lee la clave del entorno/secrets. Si no existe, lanza excepción en lugar de usar un string hardcodeado
             string secretKey = jwtSettings["Key"]
                 ?? throw new InvalidOperationException("La clave secreta JWT no está configurada en los secretos de la aplicación.");
 
             var key = Encoding.UTF8.GetBytes(secretKey);
 
-            var claims = new[]
+            var claims = new List<Claim>
             {
-            new Claim(ClaimTypes.NameIdentifier, usuario.Id.ToString()),
-            new Claim(JwtRegisteredClaimNames.Sub, usuario.Id.ToString()),
-            new Claim(JwtRegisteredClaimNames.Email, usuario.Email),
-            new Claim(ClaimTypes.Role, usuario.Rol ?? Roles.Cliente)
+                new Claim(ClaimTypes.NameIdentifier, usuario.Id.ToString()),
+                new Claim(JwtRegisteredClaimNames.Sub, usuario.Id.ToString()),
+                new Claim(JwtRegisteredClaimNames.Email, usuario.Email),
+                new Claim(ClaimTypes.Role, usuario.Rol ?? Roles.Cliente)
             };
+
+            // Si es Proveedor y tiene perfil asignado, sumamos el ProveedorId al token
+            if (usuario.Rol == Roles.Proveedor && usuario.Proveedor != null)
+            {
+                claims.Add(new Claim("ProveedorId", usuario.Proveedor.Id.ToString()));
+            }
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {

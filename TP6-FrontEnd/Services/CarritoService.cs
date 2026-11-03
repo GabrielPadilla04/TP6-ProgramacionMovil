@@ -1,71 +1,89 @@
-﻿using TP6_Shared.DTOs.Producto.Response;
-using TP6_FrontEnd.Models;
-
-namespace TP6_FrontEnd.Services
+﻿namespace TP6_FrontEnd.Services
 {
+    public class CartItem
+    {
+        public int ProductoId { get; set; }
+        public string Nombre { get; set; } = string.Empty;
+        public decimal Precio { get; set; }
+        public int Cantidad { get; set; }
+        public int StockMaximo { get; set; }
+        public string? ImagenUrl { get; set; }
+        public decimal Subtotal => Precio * Cantidad;
+    }
+
+    
     public class CarritoService : ICarritoService
     {
-        private List<ItemCarrito> _items = new();
+        public event Action? OnChange;
+        public List<CartItem> Items { get; private set; } = new();
 
-        public event Action? OnCarritoCambiado;
-
-        public List<ItemCarrito> ObtenerItems() => _items;
-
-        public void AgregarItem(ProductoResponse producto, int cantidad)
+        public void AgregarProducto(int id, string nombre, decimal precio, int stock, string? imagenUrl, int cantidad = 1)
         {
-            var itemExistente = _items.FirstOrDefault(i => i.ProductoId == producto.Id);
-
-            if (itemExistente != null)
+            var existente = Items.FirstOrDefault(i => i.ProductoId == id);
+            if (existente != null)
             {
-                itemExistente.Cantidad += cantidad;
+                if (existente.Cantidad + cantidad <= stock)
+                {
+                    existente.Cantidad += cantidad;
+                }
             }
             else
             {
-                _items.Add(new ItemCarrito
+                Items.Add(new CartItem
                 {
-                    ProductoId = producto.Id,
-                    Nombre = producto.Nombre,
-                    Precio = producto.Precio,
-                    Cantidad = cantidad
+                    ProductoId = id,
+                    Nombre = nombre,
+                    Precio = precio,
+                    StockMaximo = stock,
+                    ImagenUrl = imagenUrl,
+                    Cantidad = Math.Min(cantidad, stock)
                 });
             }
-
-            NotificarCambios();
+            OnChange?.Invoke();
         }
 
-        public void ActualizarCantidad(int productoId, int cantidad)
+        public void IncrementarCantidad(int productoId)
         {
-            var item = _items.FirstOrDefault(i => i.ProductoId == productoId);
-            if (item != null)
+            var item = Items.FirstOrDefault(i => i.ProductoId == productoId);
+            if (item != null && item.Cantidad < item.StockMaximo)
             {
-                if (cantidad <= 0)
-                {
-                    _items.Remove(item);
-                }
-                else
-                {
-                    item.Cantidad = cantidad;
-                }
+                item.Cantidad++;
+                OnChange?.Invoke();
             }
         }
-        public void EliminarItem(int productoId)
+
+        public void DecrementarCantidad(int productoId)
         {
-            var item = _items.FirstOrDefault(i => i.ProductoId == productoId);
+            var item = Items.FirstOrDefault(i => i.ProductoId == productoId);
             if (item != null)
             {
-                _items.Remove(item);
-                NotificarCambios();
+                item.Cantidad--;
+                if (item.Cantidad <= 0)
+                {
+                    Items.Remove(item);
+                }
+                OnChange?.Invoke();
+            }
+        }
+
+        public void RemoverProducto(int productoId)
+        {
+            var item = Items.FirstOrDefault(i => i.ProductoId == productoId);
+            if (item != null)
+            {
+                Items.Remove(item);
+                OnChange?.Invoke();
             }
         }
 
         public void VaciarCarrito()
         {
-            _items.Clear();
-            NotificarCambios();
+            Items.Clear();
+            OnChange?.Invoke();
         }
 
-        public decimal ObtenerTotal() => _items.Sum(i => i.Subtotal);
+        public decimal ObtenerTotal() => Items.Sum(i => i.Subtotal);
 
-        private void NotificarCambios() => OnCarritoCambiado?.Invoke();
+        public int ObtenerCantidadTotalItems() => Items.Sum(i => i.Cantidad);
     }
 }

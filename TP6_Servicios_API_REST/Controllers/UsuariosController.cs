@@ -24,7 +24,7 @@ namespace TP6_Servicios_API_REST.Controllers
         }
 
         // ----------------------------------------------------
-        // ENDPOINTS DE USUARIO COMÚN (Acceso propio o Admin)
+        // ENDPOINTS DE CUENTA PROPIA (Usuario, Cliente o Proveedor)
         // ----------------------------------------------------
 
         [HttpGet]
@@ -42,8 +42,9 @@ namespace TP6_Servicios_API_REST.Controllers
             }
         }
 
+        // Se agrega Roles.Proveedor para que pueda cerrar su cuenta
         [HttpDelete("dardebaja")]
-        [Authorize(Roles = $"{Roles.Administrador},{Roles.Usuario}")]
+        [Authorize(Roles = $"{Roles.Administrador},{Roles.Usuario},{Roles.Proveedor}")]
         public async Task<ActionResult> DarDeBaja()
         {
             try
@@ -73,8 +74,9 @@ namespace TP6_Servicios_API_REST.Controllers
             }
         }
 
+        // Se agrega Roles.Proveedor para que pueda editar su perfil
         [HttpPut("actualizar")]
-        [Authorize(Roles = $"{Roles.Administrador},{Roles.Usuario}")]
+        [Authorize(Roles = $"{Roles.Administrador},{Roles.Usuario},{Roles.Proveedor}")]
         public async Task<ActionResult<UsuarioAuthDtoOutput>> Actualizar([FromBody] UsuarioDtoInput usuarioDtoInput)
         {
             try
